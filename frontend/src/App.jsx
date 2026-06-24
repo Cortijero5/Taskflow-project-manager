@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import FeatureCard from './components/FeatureCard.jsx'
 
 const features = [
@@ -19,6 +20,8 @@ const features = [
 ]
 
 function App() {
+  const [showDetails, setShowDetails] = useState(false)
+
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10">
       <section className="mx-auto max-w-5xl">
@@ -35,6 +38,22 @@ function App() {
             Proyecto full-stack inspirado en Trello, desarrollado con React,
             Tailwind CSS, Express, MySQL y Prisma.
           </p>
+
+          <button
+            type="button"
+            onClick={() => setShowDetails(!showDetails)}
+            className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            {showDetails ? 'Ocultar detalles' : 'Ver detalles del proyecto'}
+          </button>
+
+          {showDetails && (
+            <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+              TaskFlow tendrá autenticación, proyectos, tareas, estados,
+              prioridades, filtros y conexión con una API REST construida con
+              Express.
+            </div>
+          )}
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {features.map((feature) => (
