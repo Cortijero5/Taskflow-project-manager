@@ -1,3 +1,5 @@
+import FeatureCard from './components/FeatureCard.jsx'
+
 function App() {
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10">
@@ -17,26 +19,20 @@ function App() {
           </p>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <article className="rounded-xl border border-slate-200 p-4">
-              <h2 className="font-semibold text-slate-900">Proyectos</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                Crea y organiza tus espacios de trabajo.
-              </p>
-            </article>
+            <FeatureCard
+              title="Proyectos"
+              description="Crea y organiza tus espacios de trabajo."
+            />
 
-            <article className="rounded-xl border border-slate-200 p-4">
-              <h2 className="font-semibold text-slate-900">Tareas</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                Gestiona tareas por estado, prioridad y fecha.
-              </p>
-            </article>
+            <FeatureCard
+              title="Tareas"
+              description="Gestiona tareas por estado, prioridad y fecha."
+            />
 
-            <article className="rounded-xl border border-slate-200 p-4">
-              <h2 className="font-semibold text-slate-900">API REST</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                Frontend conectado a un backend con Express.
-              </p>
-            </article>
+            <FeatureCard
+              title="API REST"
+              description="Frontend conectado a un backend con Express."
+            />
           </div>
         </div>
       </section>
