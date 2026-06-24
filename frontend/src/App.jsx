@@ -1,26 +1,52 @@
-import { useState } from 'react'
-import FeatureCard from './components/FeatureCard.jsx'
+import { useState } from "react";
+import FeatureCard from "./components/FeatureCard.jsx";
+import TaskCard from "./components/TaskCard.jsx";
 
 const features = [
   {
     id: 1,
-    title: 'Proyectos',
-    description: 'Crea y organiza tus espacios de trabajo.',
+    title: "Proyectos",
+    description: "Crea y organiza tus espacios de trabajo.",
   },
   {
     id: 2,
-    title: 'Tareas',
-    description: 'Gestiona tareas por estado, prioridad y fecha.',
+    title: "Tareas",
+    description: "Gestiona tareas por estado, prioridad y fecha.",
   },
   {
     id: 3,
-    title: 'API REST',
-    description: 'Frontend conectado a un backend con Express.',
+    title: "API REST",
+    description: "Frontend conectado a un backend con Express.",
   },
-]
+];
+
+const tasks = [
+  {
+    id: 1,
+    title: "Diseñar pantalla de login",
+    description:
+      "Crear una primera versión responsive del formulario de acceso.",
+    status: "TODO",
+    priority: "HIGH",
+  },
+  {
+    id: 2,
+    title: "Crear API de proyectos",
+    description: "Preparar las rutas iniciales para listar y crear proyectos.",
+    status: "IN_PROGRESS",
+    priority: "MEDIUM",
+  },
+  {
+    id: 3,
+    title: "Configurar Tailwind",
+    description: "Instalar Tailwind y limpiar los estilos iniciales de Vite.",
+    status: "DONE",
+    priority: "LOW",
+  },
+];
 
 function App() {
-  const [showDetails, setShowDetails] = useState(false)
+  const [showDetails, setShowDetails] = useState(false);
 
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10">
@@ -44,7 +70,7 @@ function App() {
             onClick={() => setShowDetails(!showDetails)}
             className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
-            {showDetails ? 'Ocultar detalles' : 'Ver detalles del proyecto'}
+            {showDetails ? "Ocultar detalles" : "Ver detalles del proyecto"}
           </button>
 
           {showDetails && (
@@ -64,10 +90,33 @@ function App() {
               />
             ))}
           </div>
+          <div className="mt-10">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-slate-900">
+                Tareas recientes
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Primeras tareas de ejemplo que más adelante vendrán desde la
+                API.
+              </p>
+            </div>
+
+            <div className="grid gap-4">
+              {tasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  title={task.title}
+                  description={task.description}
+                  status={task.status}
+                  priority={task.priority}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </section>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;
