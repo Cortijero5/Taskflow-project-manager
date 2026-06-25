@@ -1,7 +1,8 @@
 import { useState } from "react";
 import FeatureCard from "./components/FeatureCard.jsx";
-import TaskCard from "./components/TaskCard.jsx";
 import TaskForm from "./components/TaskForm.jsx";
+import TaskFilters from "./components/TaskFilters.jsx";
+import TaskList from "./components/TaskList.jsx";
 
 // Datos estáticos para las tarjetas informativas de la parte superior.
 // De momento están en frontend, pero más adelante parte de los datos vendrán de la API.
@@ -23,53 +24,6 @@ const features = [
   },
 ];
 
-// Tareas iniciales de ejemplo.
-// Las usamos como valor inicial del estado "tasks".
-const initialTasks = [
-  {
-    id: 1,
-    title: "Diseñar pantalla de login",
-    description:
-      "Crear una primera versión responsive del formulario de acceso.",
-    status: "TODO",
-    priority: "HIGH",
-  },
-  {
-    id: 2,
-    title: "Crear API de proyectos",
-    description: "Preparar las rutas iniciales para listar y crear proyectos.",
-    status: "IN_PROGRESS",
-    priority: "MEDIUM",
-  },
-  {
-    id: 3,
-    title: "Configurar Tailwind",
-    description: "Instalar Tailwind y limpiar los estilos iniciales de Vite.",
-    status: "DONE",
-    priority: "LOW",
-  },
-];
-
-// Filtros disponibles para mostrar tareas según su estado.
-const taskFilters = [
-  {
-    label: "Todas",
-    value: "ALL",
-  },
-  {
-    label: "Pendientes",
-    value: "TODO",
-  },
-  {
-    label: "En progreso",
-    value: "IN_PROGRESS",
-  },
-  {
-    label: "Hechas",
-    value: "DONE",
-  },
-];
-
 function App() {
   // Controla si mostramos u ocultamos el bloque de detalles del proyecto.
   const [showDetails, setShowDetails] = useState(false);
@@ -78,8 +32,8 @@ function App() {
   const [selectedStatus, setSelectedStatus] = useState("ALL");
 
   // Guarda la lista de tareas actual.
-  // Empieza con initialTasks, pero puede cambiar al crear nuevas tareas.
-  const [tasks, setTasks] = useState(initialTasks);
+  // De momento empieza vacía; más adelante se cargará desde la API.
+  const [tasks, setTasks] = useState([]);
 
   // Guarda los valores actuales del formulario.
   // Cada input/select estará conectado a una propiedad de este objeto.
@@ -200,34 +154,12 @@ function App() {
               onSubmit={handleSubmit}
             />
 
-            <div className="mb-4 flex flex-wrap gap-2">
-              {taskFilters.map((filter) => (
-                <button
-                  key={filter.value}
-                  type="button"
-                  onClick={() => setSelectedStatus(filter.value)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                    selectedStatus === filter.value
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
+            <TaskFilters
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+            />
 
-            <div className="grid gap-4">
-              {filteredTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  title={task.title}
-                  description={task.description}
-                  status={task.status}
-                  priority={task.priority}
-                />
-              ))}
-            </div>
+            <TaskList tasks={filteredTasks} />
           </div>
         </div>
       </section>
