@@ -1,7 +1,10 @@
 import { useState } from "react";
 import FeatureCard from "./components/FeatureCard.jsx";
 import TaskCard from "./components/TaskCard.jsx";
+import TaskForm from "./components/TaskForm.jsx";
 
+// Datos estáticos para las tarjetas informativas de la parte superior.
+// De momento están en frontend, pero más adelante parte de los datos vendrán de la API.
 const features = [
   {
     id: 1,
@@ -20,7 +23,9 @@ const features = [
   },
 ];
 
-const tasks = [
+// Tareas iniciales de ejemplo.
+// Las usamos como valor inicial del estado "tasks".
+const initialTasks = [
   {
     id: 1,
     title: "Diseñar pantalla de login",
@@ -44,6 +49,8 @@ const tasks = [
     priority: "LOW",
   },
 ];
+
+// Filtros disponibles para mostrar tareas según su estado.
 const taskFilters = [
   {
     label: "Todas",
@@ -64,12 +71,74 @@ const taskFilters = [
 ];
 
 function App() {
+  // Controla si mostramos u ocultamos el bloque de detalles del proyecto.
   const [showDetails, setShowDetails] = useState(false);
+
+  // Guarda el filtro de estado seleccionado actualmente.
   const [selectedStatus, setSelectedStatus] = useState("ALL");
+
+  // Guarda la lista de tareas actual.
+  // Empieza con initialTasks, pero puede cambiar al crear nuevas tareas.
+  const [tasks, setTasks] = useState(initialTasks);
+
+  // Guarda los valores actuales del formulario.
+  // Cada input/select estará conectado a una propiedad de este objeto.
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    status: "TODO",
+    priority: "MEDIUM",
+  });
+
+  // Calcula qué tareas se deben mostrar según el filtro activo.
+  // Si el filtro es "ALL", mostramos todas. Si no, filtramos por status.
   const filteredTasks =
     selectedStatus === "ALL"
       ? tasks
       : tasks.filter((task) => task.status === selectedStatus);
+
+  // Actualiza el estado del formulario cuando el usuario escribe o selecciona algo.
+  function handleInputChange(event) {
+    const { name, value } = event.target;
+
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  }
+
+  // Controla el envío del formulario y añade una nueva tarea al estado.
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    // Evita crear tareas sin título o solo con espacios.
+    if (!formData.title.trim()) {
+      return;
+    }
+
+    const newTask = {
+      id: Date.now(),
+      title: formData.title,
+      description: formData.description,
+      status: formData.status,
+      priority: formData.priority,
+    };
+
+    // Creamos un nuevo array con la tarea nueva al principio.
+    // No usamos push porque en React no debemos mutar el estado directamente.
+    setTasks([newTask, ...tasks]);
+
+    // Limpiamos el formulario después de crear la tarea.
+    setFormData({
+      title: "",
+      description: "",
+      status: "TODO",
+      priority: "MEDIUM",
+    });
+
+    // Volvemos al filtro "Todas" para que la tarea recién creada sea visible.
+    setSelectedStatus("ALL");
+  }
 
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10">
@@ -113,6 +182,7 @@ function App() {
               />
             ))}
           </div>
+
           <div className="mt-10">
             <div className="mb-4">
               <h2 className="text-xl font-bold text-slate-900">
@@ -123,6 +193,12 @@ function App() {
                 API.
               </p>
             </div>
+
+            <TaskForm
+              formData={formData}
+              onInputChange={handleInputChange}
+              onSubmit={handleSubmit}
+            />
 
             <div className="mb-4 flex flex-wrap gap-2">
               {taskFilters.map((filter) => (
