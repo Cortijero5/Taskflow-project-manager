@@ -44,12 +44,35 @@ function App() {
     priority: "MEDIUM",
   });
 
+  // Guarda el estado de la conexión con la API.
+  const [apiStatus, setApiStatus] = useState("idle");
+
+  // Guarda el mensaje recibido desde el backend.
+  const [apiMessage, setApiMessage] = useState("");
+
   // Calcula qué tareas se deben mostrar según el filtro activo.
   // Si el filtro es "ALL", mostramos todas. Si no, filtramos por status.
   const filteredTasks =
     selectedStatus === "ALL"
       ? tasks
       : tasks.filter((task) => task.status === selectedStatus);
+
+  // Hace una petición al backend para comprobar si la API responde.
+  async function handleCheckApi() {
+    setApiStatus("loading");
+    setApiMessage("");
+
+    try {
+      const response = await fetch("http://localhost:3000/api/health");
+      const data = await response.json();
+
+      setApiStatus("success");
+      setApiMessage(data.message);
+    } catch (error) {
+      setApiStatus("error");
+      setApiMessage("No se pudo conectar con la API.");
+    }
+  }
 
   // Actualiza el estado del formulario cuando el usuario escribe o selecciona algo.
   function handleInputChange(event) {
@@ -126,6 +149,39 @@ function App() {
               Express.
             </div>
           )}
+
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Estado del backend
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Comprueba si React puede comunicarse con la API de Express.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCheckApi}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Comprobar API
+              </button>
+            </div>
+
+            {apiStatus !== "idle" && (
+              <p
+                className={`mt-3 text-sm font-medium ${
+                  apiStatus === "success" ? "text-green-700" : "text-red-700"
+                }`}
+              >
+                {apiStatus === "loading"
+                  ? "Conectando con la API..."
+                  : apiMessage}
+              </p>
+            )}
+          </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {features.map((feature) => (
