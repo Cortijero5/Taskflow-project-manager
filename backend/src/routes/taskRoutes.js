@@ -1,21 +1,33 @@
 import express from "express";
+import prisma from "../lib/prisma.js";
 
 // Router nos permite agrupar rutas relacionadas en un archivo separado.
 const router = express.Router();
 
-// Tareas temporales guardadas en memoria.
-// Más adelante esto vendrá de MySQL usando Prisma.
-let tasks = [];
+const allowedStatuses = ["TODO", "IN_PROGRESS", "DONE"];
+const allowedPriorities = ["LOW", "MEDIUM", "HIGH"];
 
-// Ruta para obtener todas las tareas.
+// Ruta para obtener todas las tareas desde MySQL.
 // GET /api/tasks
-router.get("/", (req, res) => {
-    res.json(tasks);
+router.get("/", async (req, res) => {
+    try {
+        const tasks = await prisma.task.findMany({
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+
+        res.json(tasks);
+    } catch (error) {
+        res.status(500).json({
+            message: "No se pudieron cargar las tareas.",
+        });
+    }
 });
 
-// Ruta para crear una nueva tarea.
+// Ruta para crear una nueva tarea en MySQL.
 // POST /api/tasks
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     const { title, description, status, priority } = req.body;
 
     // Validación básica: no permitimos tareas sin título.
@@ -25,47 +37,90 @@ router.post("/", (req, res) => {
         });
     }
 
-    const newTask = {
-        id: Date.now(),
-        title,
-        description: description || "",
-        status: status || "TODO",
-        priority: priority || "MEDIUM",
-    };
-
-    tasks = [newTask, ...tasks];
-
-    res.status(201).json(newTask);
-});
-
-// Ruta para eliminar una tarea por su id.
-// DELETE /api/tasks/:id
-router.delete("/:id", (req, res) => {
-    const taskId = Number(req.params.id);
-
-    const taskExists = tasks.some((task) => task.id === taskId);
-
-    if (!taskExists) {
-        return res.status(404).json({
-            message: "Tarea no encontrada.",
+    // Validamos que el estado enviado sea correcto.
+    if (status && !allowedStatuses.includes(status)) {
+        return res.status(400).json({
+            message: "Estado de tarea no válido.",
         });
     }
 
-    tasks = tasks.filter((task) => task.id !== taskId);
+    // Validamos que la prioridad enviada sea correcta.
+    if (priority && !allowedPriorities.includes(priority)) {
+        return res.status(400).json({
+            message: "Prioridad de tarea no válida.",
+        });
+    }
 
-    res.json({
-        message: "Tarea eliminada correctamente.",
-        id: taskId,
-    });
+    try {
+        const newTask = await prisma.task.create({
+            data: {
+                title: title.trim(),
+                description: description?.trim() || null,
+                status: status || "TODO",
+                priority: priority || "MEDIUM",
+            },
+        });
+
+        res.status(201).json(newTask);
+    } catch (error) {
+        res.status(500).json({
+            message: "No se pudo crear la tarea.",
+        });
+    }
 });
 
-// Ruta para actualizar solo el estado de una tarea.
+// Ruta para eliminar una tarea por su id en MySQL.
+// DELETE /api/tasks/:id
+router.delete("/:id", async (req, res) => {
+    const taskId = Number(req.params.id);
+
+    if (Number.isNaN(taskId)) {
+        return res.status(400).json({
+            message: "ID de tarea no válido.",
+        });
+    }
+
+    try {
+        const task = await prisma.task.findUnique({
+            where: {
+                id: taskId,
+            },
+        });
+
+        if (!task) {
+            return res.status(404).json({
+                message: "Tarea no encontrada.",
+            });
+        }
+
+        await prisma.task.delete({
+            where: {
+                id: taskId,
+            },
+        });
+
+        res.json({
+            message: "Tarea eliminada correctamente.",
+            id: taskId,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "No se pudo eliminar la tarea.",
+        });
+    }
+});
+
+// Ruta para actualizar solo el estado de una tarea en MySQL.
 // PATCH /api/tasks/:id/status
-router.patch("/:id/status", (req, res) => {
+router.patch("/:id/status", async (req, res) => {
     const taskId = Number(req.params.id);
     const { status } = req.body;
 
-    const allowedStatuses = ["TODO", "IN_PROGRESS", "DONE"];
+    if (Number.isNaN(taskId)) {
+        return res.status(400).json({
+            message: "ID de tarea no válido.",
+        });
+    }
 
     // Validamos que el estado enviado sea uno de los permitidos.
     if (!allowedStatuses.includes(status)) {
@@ -74,23 +129,34 @@ router.patch("/:id/status", (req, res) => {
         });
     }
 
-    const taskIndex = tasks.findIndex((task) => task.id === taskId);
+    try {
+        const task = await prisma.task.findUnique({
+            where: {
+                id: taskId,
+            },
+        });
 
-    if (taskIndex === -1) {
-        return res.status(404).json({
-            message: "Tarea no encontrada.",
+        if (!task) {
+            return res.status(404).json({
+                message: "Tarea no encontrada.",
+            });
+        }
+
+        const updatedTask = await prisma.task.update({
+            where: {
+                id: taskId,
+            },
+            data: {
+                status,
+            },
+        });
+
+        res.json(updatedTask);
+    } catch (error) {
+        res.status(500).json({
+            message: "No se pudo actualizar la tarea.",
         });
     }
-
-    // Creamos una nueva versión de la tarea con el estado actualizado.
-    const updatedTask = {
-        ...tasks[taskIndex],
-        status,
-    };
-
-    tasks[taskIndex] = updatedTask;
-
-    res.json(updatedTask);
 });
 
 export default router;
