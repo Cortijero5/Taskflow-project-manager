@@ -1,14 +1,9 @@
-const statusLabels = {
-  TODO: "Pendiente",
-  IN_PROGRESS: "En progreso",
-  DONE: "Hecho",
-};
-
 const priorityLabels = {
   LOW: "Baja",
   MEDIUM: "Media",
   HIGH: "Alta",
 };
+
 const statusOptions = [
   { label: "Pendiente", value: "TODO" },
   { label: "En progreso", value: "IN_PROGRESS" },
@@ -24,6 +19,10 @@ function TaskCard({
   onDelete,
   onStatusChange,
 }) {
+  // Buscamos la etiqueta visible del estado actual.
+  // Por ejemplo: "TODO" -> "Pendiente".
+  const currentStatus = statusOptions.find((option) => option.value === status);
+
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
@@ -39,11 +38,12 @@ function TaskCard({
 
       <div className="mt-4">
         <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-          {statusLabels[status]}
+          {currentStatus?.label || status}
         </span>
       </div>
+
       <div className="mt-4 flex flex-wrap gap-2">
-        {/* Botones para cambiar el estado de la tarea */}
+        {/* Creamos un botón por cada estado posible */}
         {statusOptions.map((option) => (
           <button
             key={option.value}

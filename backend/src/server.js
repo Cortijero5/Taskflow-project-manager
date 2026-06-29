@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import taskRoutes from "./routes/taskRoutes.js";
 
 // Creamos la aplicación de Express.
 // "app" será el objeto principal donde configuramos rutas y middlewares.
@@ -20,10 +21,6 @@ app.use(
 // Esto será necesario cuando React envíe datos al backend.
 app.use(express.json());
 
-// Tareas temporales guardadas en memoria.
-// Más adelante esto vendrá de MySQL usando Prisma.
-let tasks = [];
-
 // Ruta de prueba para comprobar que el backend está funcionando.
 // GET http://localhost:3000/api/health
 app.get("/api/health", (req, res) => {
@@ -33,91 +30,9 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-// Ruta para obtener todas las tareas.
-// GET http://localhost:3000/api/tasks
-app.get("/api/tasks", (req, res) => {
-    res.json(tasks);
-});
-
-// Ruta para crear una nueva tarea.
-// POST http://localhost:3000/api/tasks
-app.post("/api/tasks", (req, res) => {
-    const { title, description, status, priority } = req.body;
-
-    // Validación básica: no permitimos tareas sin título.
-    if (!title || !title.trim()) {
-        return res.status(400).json({
-            message: "El título de la tarea es obligatorio.",
-        });
-    }
-
-    const newTask = {
-        id: Date.now(),
-        title,
-        description: description || "",
-        status: status || "TODO",
-        priority: priority || "MEDIUM",
-    };
-
-    tasks = [newTask, ...tasks];
-
-    res.status(201).json(newTask);
-});
-
-// Ruta para eliminar una tarea por su id.
-// DELETE http://localhost:3000/api/tasks/:id
-app.delete("/api/tasks/:id", (req, res) => {
-    const taskId = Number(req.params.id);
-
-    const taskExists = tasks.some((task) => task.id === taskId);
-
-    if (!taskExists) {
-        return res.status(404).json({
-            message: "Tarea no encontrada.",
-        });
-    }
-
-    tasks = tasks.filter((task) => task.id !== taskId);
-
-    res.json({
-        message: "Tarea eliminada correctamente.",
-        id: taskId,
-    });
-});
-
-// Ruta para actualizar solo el estado de una tarea.
-// PATCH http://localhost:3000/api/tasks/:id/status
-app.patch("/api/tasks/:id/status", (req, res) => {
-    const taskId = Number(req.params.id);
-    const { status } = req.body;
-
-    const allowedStatuses = ["TODO", "IN_PROGRESS", "DONE"];
-
-    // Validamos que el estado enviado sea uno de los permitidos.
-    if (!allowedStatuses.includes(status)) {
-        return res.status(400).json({
-            message: "Estado de tarea no válido.",
-        });
-    }
-
-    const taskIndex = tasks.findIndex((task) => task.id === taskId);
-
-    if (taskIndex === -1) {
-        return res.status(404).json({
-            message: "Tarea no encontrada.",
-        });
-    }
-
-    // Creamos una nueva versión de la tarea con el estado actualizado.
-    const updatedTask = {
-        ...tasks[taskIndex],
-        status,
-    };
-
-    tasks[taskIndex] = updatedTask;
-
-    res.json(updatedTask);
-});
+// Conectamos todas las rutas relacionadas con tareas.
+// Cualquier ruta que empiece por /api/tasks se gestionará en taskRoutes.
+app.use("/api/tasks", taskRoutes);
 
 // Arrancamos el servidor y lo dejamos escuchando peticiones.
 app.listen(PORT, () => {
