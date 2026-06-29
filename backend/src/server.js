@@ -64,6 +64,27 @@ app.post("/api/tasks", (req, res) => {
     res.status(201).json(newTask);
 });
 
+// Ruta para eliminar una tarea por su id.
+// DELETE http://localhost:3000/api/tasks/:id
+app.delete("/api/tasks/:id", (req, res) => {
+    const taskId = Number(req.params.id);
+
+    const taskExists = tasks.some((task) => task.id === taskId);
+
+    if (!taskExists) {
+        return res.status(404).json({
+            message: "Tarea no encontrada.",
+        });
+    }
+
+    tasks = tasks.filter((task) => task.id !== taskId);
+
+    res.json({
+        message: "Tarea eliminada correctamente.",
+        id: taskId,
+    });
+});
+
 // Arrancamos el servidor y lo dejamos escuchando peticiones.
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

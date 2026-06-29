@@ -159,6 +159,33 @@ function App() {
     }
   }
 
+  // Elimina una tarea usando la API y actualiza el estado local.
+  async function handleDeleteTask(taskId) {
+    setTasksError("");
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/tasks/${taskId}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "No se pudo eliminar la tarea.");
+      }
+
+      // Quitamos la tarea eliminada del estado local para actualizar la pantalla.
+      setTasks((currentTasks) =>
+        currentTasks.filter((task) => task.id !== taskId),
+      );
+    } catch (error) {
+      setTasksError(error.message);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10">
       <section className="mx-auto max-w-5xl">
@@ -269,7 +296,7 @@ function App() {
               </p>
             )}
 
-            <TaskList tasks={filteredTasks} />
+            <TaskList tasks={filteredTasks} onDeleteTask={handleDeleteTask} />
           </div>
         </div>
       </section>

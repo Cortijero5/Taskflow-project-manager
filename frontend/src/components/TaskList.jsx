@@ -1,6 +1,6 @@
 import TaskCard from "./TaskCard.jsx";
 
-function TaskList({ tasks }) {
+function TaskList({ tasks, onDeleteTask }) {
   // Si no hay tareas para mostrar, enseñamos un mensaje al usuario.
   if (tasks.length === 0) {
     return (
@@ -21,10 +21,12 @@ function TaskList({ tasks }) {
       {tasks.map((task) => (
         <TaskCard
           key={task.id}
+          id={task.id}
           title={task.title}
           description={task.description}
           status={task.status}
           priority={task.priority}
+          onDelete={onDeleteTask}
         />
       ))}
     </div>
