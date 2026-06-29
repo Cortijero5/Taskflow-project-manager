@@ -9,8 +9,21 @@ const priorityLabels = {
   MEDIUM: "Media",
   HIGH: "Alta",
 };
+const statusOptions = [
+  { label: "Pendiente", value: "TODO" },
+  { label: "En progreso", value: "IN_PROGRESS" },
+  { label: "Hecho", value: "DONE" },
+];
 
-function TaskCard({ id, title, description, status, priority, onDelete }) {
+function TaskCard({
+  id,
+  title,
+  description,
+  status,
+  priority,
+  onDelete,
+  onStatusChange,
+}) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
@@ -28,6 +41,24 @@ function TaskCard({ id, title, description, status, priority, onDelete }) {
         <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
           {statusLabels[status]}
         </span>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {/* Botones para cambiar el estado de la tarea */}
+        {statusOptions.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onStatusChange(id, option.value)}
+            disabled={status === option.value}
+            className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
+              status === option.value
+                ? "bg-blue-600 text-white"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
 
       <button

@@ -85,6 +85,40 @@ app.delete("/api/tasks/:id", (req, res) => {
     });
 });
 
+// Ruta para actualizar solo el estado de una tarea.
+// PATCH http://localhost:3000/api/tasks/:id/status
+app.patch("/api/tasks/:id/status", (req, res) => {
+    const taskId = Number(req.params.id);
+    const { status } = req.body;
+
+    const allowedStatuses = ["TODO", "IN_PROGRESS", "DONE"];
+
+    // Validamos que el estado enviado sea uno de los permitidos.
+    if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+            message: "Estado de tarea no válido.",
+        });
+    }
+
+    const taskIndex = tasks.findIndex((task) => task.id === taskId);
+
+    if (taskIndex === -1) {
+        return res.status(404).json({
+            message: "Tarea no encontrada.",
+        });
+    }
+
+    // Creamos una nueva versión de la tarea con el estado actualizado.
+    const updatedTask = {
+        ...tasks[taskIndex],
+        status,
+    };
+
+    tasks[taskIndex] = updatedTask;
+
+    res.json(updatedTask);
+});
+
 // Arrancamos el servidor y lo dejamos escuchando peticiones.
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

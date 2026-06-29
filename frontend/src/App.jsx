@@ -186,6 +186,39 @@ function App() {
     }
   }
 
+  // Actualiza el estado de una tarea usando la API.
+  async function handleUpdateTaskStatus(taskId, newStatus) {
+    setTasksError("");
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/tasks/${taskId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatus,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "No se pudo actualizar la tarea.");
+      }
+
+      // Reemplazamos en el estado local la tarea antigua por la actualizada.
+      setTasks((currentTasks) =>
+        currentTasks.map((task) => (task.id === taskId ? data : task)),
+      );
+    } catch (error) {
+      setTasksError(error.message);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10">
       <section className="mx-auto max-w-5xl">
@@ -296,7 +329,11 @@ function App() {
               </p>
             )}
 
-            <TaskList tasks={filteredTasks} onDeleteTask={handleDeleteTask} />
+            <TaskList
+              tasks={filteredTasks}
+              onDeleteTask={handleDeleteTask}
+              onUpdateTaskStatus={handleUpdateTaskStatus}
+            />
           </div>
         </div>
       </section>
