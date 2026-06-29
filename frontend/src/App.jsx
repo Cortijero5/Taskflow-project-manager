@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FeatureCard from "./components/FeatureCard.jsx";
 import TaskForm from "./components/TaskForm.jsx";
 import TaskFilters from "./components/TaskFilters.jsx";
@@ -34,6 +34,12 @@ function App() {
   // Guarda la lista de tareas actual.
   // De momento empieza vacía; más adelante se cargará desde la API.
   const [tasks, setTasks] = useState([]);
+
+  // Controla si estamos cargando tareas desde el backend.
+  const [tasksLoading, setTasksLoading] = useState(false);
+
+  // Guarda un posible error al cargar o crear tareas.
+  const [tasksError, setTasksError] = useState("");
 
   // Guarda los valores actuales del formulario.
   // Cada input/select estará conectado a una propiedad de este objeto.
@@ -74,6 +80,31 @@ function App() {
     }
   }
 
+  // Carga las tareas desde el backend cuando se monta el componente App.
+  useEffect(() => {
+    async function loadTasks() {
+      setTasksLoading(true);
+      setTasksError("");
+
+      try {
+        const response = await fetch("http://localhost:3000/api/tasks");
+
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar las tareas.");
+        }
+
+        const data = await response.json();
+        setTasks(data);
+      } catch (error) {
+        setTasksError(error.message);
+      } finally {
+        setTasksLoading(false);
+      }
+    }
+
+    loadTasks();
+  }, []);
+
   // Actualiza el estado del formulario cuando el usuario escribe o selecciona algo.
   function handleInputChange(event) {
     const { name, value } = event.target;
@@ -84,8 +115,8 @@ function App() {
     });
   }
 
-  // Controla el envío del formulario y añade una nueva tarea al estado.
-  function handleSubmit(event) {
+  // Controla el envío del formulario y crea una nueva tarea en el backend.
+  async function handleSubmit(event) {
     event.preventDefault();
 
     // Evita crear tareas sin título o solo con espacios.
@@ -93,28 +124,39 @@ function App() {
       return;
     }
 
-    const newTask = {
-      id: Date.now(),
-      title: formData.title,
-      description: formData.description,
-      status: formData.status,
-      priority: formData.priority,
-    };
+    setTasksError("");
 
-    // Creamos un nuevo array con la tarea nueva al principio.
-    // No usamos push porque en React no debemos mutar el estado directamente.
-    setTasks([newTask, ...tasks]);
+    try {
+      const response = await fetch("http://localhost:3000/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-    // Limpiamos el formulario después de crear la tarea.
-    setFormData({
-      title: "",
-      description: "",
-      status: "TODO",
-      priority: "MEDIUM",
-    });
+      const data = await response.json();
 
-    // Volvemos al filtro "Todas" para que la tarea recién creada sea visible.
-    setSelectedStatus("ALL");
+      if (!response.ok) {
+        throw new Error(data.message || "No se pudo crear la tarea.");
+      }
+
+      // Añadimos al estado la tarea que nos devuelve el backend.
+      setTasks([data, ...tasks]);
+
+      // Limpiamos el formulario después de crear la tarea.
+      setFormData({
+        title: "",
+        description: "",
+        status: "TODO",
+        priority: "MEDIUM",
+      });
+
+      // Volvemos al filtro "Todas" para que la tarea recién creada sea visible.
+      setSelectedStatus("ALL");
+    } catch (error) {
+      setTasksError(error.message);
+    }
   }
 
   return (
@@ -214,6 +256,18 @@ function App() {
               selectedStatus={selectedStatus}
               onStatusChange={setSelectedStatus}
             />
+
+            {tasksLoading && (
+              <p className="mb-4 text-sm font-medium text-slate-600">
+                Cargando tareas desde la API...
+              </p>
+            )}
+
+            {tasksError && (
+              <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
+                {tasksError}
+              </p>
+            )}
 
             <TaskList tasks={filteredTasks} />
           </div>
