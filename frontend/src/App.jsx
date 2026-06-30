@@ -3,6 +3,12 @@ import FeatureCard from "./components/FeatureCard.jsx";
 import TaskForm from "./components/TaskForm.jsx";
 import TaskFilters from "./components/TaskFilters.jsx";
 import TaskList from "./components/TaskList.jsx";
+import {
+  createTask,
+  deleteTask,
+  getTasks,
+  updateTaskStatus,
+} from "./services/taskService.js";
 
 // Datos estáticos para las tarjetas informativas de la parte superior.
 // De momento están en frontend, pero más adelante parte de los datos vendrán de la API.
@@ -25,9 +31,6 @@ const features = [
 ];
 
 function App() {
-  // Controla si mostramos u ocultamos el bloque de detalles del proyecto.
-  const [showDetails, setShowDetails] = useState(false);
-
   // Guarda el filtro de estado seleccionado actualmente.
   const [selectedStatus, setSelectedStatus] = useState("ALL");
 
@@ -50,35 +53,12 @@ function App() {
     priority: "MEDIUM",
   });
 
-  // Guarda el estado de la conexión con la API.
-  const [apiStatus, setApiStatus] = useState("idle");
-
-  // Guarda el mensaje recibido desde el backend.
-  const [apiMessage, setApiMessage] = useState("");
-
   // Calcula qué tareas se deben mostrar según el filtro activo.
   // Si el filtro es "ALL", mostramos todas. Si no, filtramos por status.
   const filteredTasks =
     selectedStatus === "ALL"
       ? tasks
       : tasks.filter((task) => task.status === selectedStatus);
-
-  // Hace una petición al backend para comprobar si la API responde.
-  async function handleCheckApi() {
-    setApiStatus("loading");
-    setApiMessage("");
-
-    try {
-      const response = await fetch("http://localhost:3000/api/health");
-      const data = await response.json();
-
-      setApiStatus("success");
-      setApiMessage(data.message);
-    } catch (error) {
-      setApiStatus("error");
-      setApiMessage("No se pudo conectar con la API.");
-    }
-  }
 
   // Carga las tareas desde el backend cuando se monta el componente App.
   useEffect(() => {
@@ -87,13 +67,7 @@ function App() {
       setTasksError("");
 
       try {
-        const response = await fetch("http://localhost:3000/api/tasks");
-
-        if (!response.ok) {
-          throw new Error("No se pudieron cargar las tareas.");
-        }
-
-        const data = await response.json();
+        const data = await getTasks();
         setTasks(data);
       } catch (error) {
         setTasksError(error.message);
@@ -127,19 +101,7 @@ function App() {
     setTasksError("");
 
     try {
-      const response = await fetch("http://localhost:3000/api/tasks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "No se pudo crear la tarea.");
-      }
+      const data = await createTask(formData);
 
       // Añadimos al estado la tarea que nos devuelve el backend.
       setTasks([data, ...tasks]);
@@ -164,18 +126,7 @@ function App() {
     setTasksError("");
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/tasks/${taskId}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "No se pudo eliminar la tarea.");
-      }
+      await deleteTask(taskId);
 
       // Quitamos la tarea eliminada del estado local para actualizar la pantalla.
       setTasks((currentTasks) =>
@@ -191,24 +142,7 @@ function App() {
     setTasksError("");
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/tasks/${taskId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: newStatus,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "No se pudo actualizar la tarea.");
-      }
+      const data = await updateTaskStatus(taskId, newStatus);
 
       // Reemplazamos en el estado local la tarea antigua por la actualizada.
       setTasks((currentTasks) =>
@@ -235,55 +169,6 @@ function App() {
             Proyecto full-stack inspirado en Trello, desarrollado con React,
             Tailwind CSS, Express, MySQL y Prisma.
           </p>
-
-          <button
-            type="button"
-            onClick={() => setShowDetails(!showDetails)}
-            className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-          >
-            {showDetails ? "Ocultar detalles" : "Ver detalles del proyecto"}
-          </button>
-
-          {showDetails && (
-            <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-              TaskFlow tendrá autenticación, proyectos, tareas, estados,
-              prioridades, filtros y conexión con una API REST construida con
-              Express.
-            </div>
-          )}
-
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">
-                  Estado del backend
-                </h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Comprueba si React puede comunicarse con la API de Express.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleCheckApi}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Comprobar API
-              </button>
-            </div>
-
-            {apiStatus !== "idle" && (
-              <p
-                className={`mt-3 text-sm font-medium ${
-                  apiStatus === "success" ? "text-green-700" : "text-red-700"
-                }`}
-              >
-                {apiStatus === "loading"
-                  ? "Conectando con la API..."
-                  : apiMessage}
-              </p>
-            )}
-          </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {features.map((feature) => (
