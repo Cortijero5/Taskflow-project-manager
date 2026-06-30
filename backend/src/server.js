@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import taskRoutes from "./routes/taskRoutes.js";
+import projectRoutes from "./routes/projectRoutes.js";
 
 // Creamos la aplicación de Express.
 // "app" será el objeto principal donde configuramos rutas y middlewares.
@@ -33,6 +34,9 @@ app.get("/api/health", (req, res) => {
 // Conectamos todas las rutas relacionadas con tareas.
 // Cualquier ruta que empiece por /api/tasks se gestionará en taskRoutes.
 app.use("/api/tasks", taskRoutes);
+
+// Conectamos todas las rutas relacionadas con proyectos.
+app.use("/api/projects", projectRoutes);
 
 // Arrancamos el servidor y lo dejamos escuchando peticiones.
 app.listen(PORT, () => {
