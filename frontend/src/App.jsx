@@ -9,6 +9,9 @@ import {
   getTasks,
   updateTaskStatus,
 } from "./services/taskService.js";
+import ProjectForm from "./components/ProjectForm.jsx";
+import ProjectList from "./components/ProjectList.jsx";
+import { createProject, getProjects } from "./services/projectService.js";
 
 // Datos estáticos para las tarjetas informativas de la parte superior.
 // De momento están en frontend, pero más adelante parte de los datos vendrán de la API.
@@ -53,6 +56,24 @@ function App() {
     priority: "MEDIUM",
   });
 
+  // Guarda la lista de proyectos cargados desde el backend.
+  const [projects, setProjects] = useState([]);
+
+  // Guarda el proyecto seleccionado actualmente.
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+
+  // Controla si estamos cargando proyectos desde el backend.
+  const [projectsLoading, setProjectsLoading] = useState(false);
+
+  // Guarda errores relacionados con proyectos.
+  const [projectsError, setProjectsError] = useState("");
+
+  // Guarda los valores actuales del formulario de proyecto.
+  const [projectFormData, setProjectFormData] = useState({
+    name: "",
+    description: "",
+  });
+
   // Calcula qué tareas se deben mostrar según el filtro activo.
   // Si el filtro es "ALL", mostramos todas. Si no, filtramos por status.
   const filteredTasks =
@@ -79,6 +100,25 @@ function App() {
     loadTasks();
   }, []);
 
+  // Carga los proyectos desde el backend cuando se monta App.
+  useEffect(() => {
+    async function loadProjects() {
+      setProjectsLoading(true);
+      setProjectsError("");
+
+      try {
+        const data = await getProjects();
+        setProjects(data);
+      } catch (error) {
+        setProjectsError(error.message);
+      } finally {
+        setProjectsLoading(false);
+      }
+    }
+
+    loadProjects();
+  }, []);
+
   // Actualiza el estado del formulario cuando el usuario escribe o selecciona algo.
   function handleInputChange(event) {
     const { name, value } = event.target;
@@ -87,6 +127,42 @@ function App() {
       ...formData,
       [name]: value,
     });
+  }
+
+  // Actualiza el formulario de proyectos cuando el usuario escribe.
+  function handleProjectInputChange(event) {
+    const { name, value } = event.target;
+
+    setProjectFormData({
+      ...projectFormData,
+      [name]: value,
+    });
+  }
+
+  // Crea un proyecto usando la API y lo añade al estado local.
+  async function handleProjectSubmit(event) {
+    event.preventDefault();
+
+    if (!projectFormData.name.trim()) {
+      return;
+    }
+
+    setProjectsError("");
+
+    try {
+      const data = await createProject(projectFormData);
+
+      setProjects([data, ...projects]);
+
+      setProjectFormData({
+        name: "",
+        description: "",
+      });
+
+      setSelectedProjectId(data.id);
+    } catch (error) {
+      setProjectsError(error.message);
+    }
   }
 
   // Controla el envío del formulario y crea una nueva tarea en el backend.
@@ -178,6 +254,39 @@ function App() {
                 description={feature.description}
               />
             ))}
+          </div>
+
+          <div className="mt-10">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-slate-900">Proyectos</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Crea y selecciona proyectos para organizar mejor tus tareas.
+              </p>
+            </div>
+
+            <ProjectForm
+              formData={projectFormData}
+              onInputChange={handleProjectInputChange}
+              onSubmit={handleProjectSubmit}
+            />
+
+            {projectsLoading && (
+              <p className="mb-4 text-sm font-medium text-slate-600">
+                Cargando proyectos desde la API...
+              </p>
+            )}
+
+            {projectsError && (
+              <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
+                {projectsError}
+              </p>
+            )}
+
+            <ProjectList
+              projects={projects}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={setSelectedProjectId}
+            />
           </div>
 
           <div className="mt-10">
