@@ -30,3 +30,25 @@ export async function createProject(projectData) {
 
     return handleResponse(response);
 }
+
+// Actualiza un proyecto existente.
+export async function updateProject(projectId, projectData) {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(projectData),
+    });
+
+    return handleResponse(response);
+}
+
+// Elimina un proyecto por su id.
+export async function deleteProject(projectId) {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+        method: "DELETE",
+    });
+
+    return handleResponse(response);
+}

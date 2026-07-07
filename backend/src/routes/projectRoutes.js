@@ -53,4 +53,101 @@ router.post("/", async (req, res) => {
     }
 });
 
+// PATCH /api/projects/:id
+// Actualiza el nombre y/o descripción de un proyecto.
+router.patch("/:id", async (req, res) => {
+    const projectId = Number(req.params.id);
+    const { name, description } = req.body;
+
+    if (Number.isNaN(projectId)) {
+        return res.status(400).json({
+            message: "ID de proyecto no válido.",
+        });
+    }
+
+    // Si se manda name, no permitimos que venga vacío.
+    if (name !== undefined && !name.trim()) {
+        return res.status(400).json({
+            message: "El nombre del proyecto no puede estar vacío.",
+        });
+    }
+
+    try {
+        const project = await prisma.project.findUnique({
+            where: {
+                id: projectId,
+            },
+        });
+
+        if (!project) {
+            return res.status(404).json({
+                message: "Proyecto no encontrado.",
+            });
+        }
+
+        const updatedProject = await prisma.project.update({
+            where: {
+                id: projectId,
+            },
+            data: {
+                ...(name !== undefined && { name: name.trim() }),
+                ...(description !== undefined && {
+                    description: description.trim() || null,
+                }),
+            },
+            include: {
+                tasks: true,
+            },
+        });
+
+        res.json(updatedProject);
+    } catch (error) {
+        res.status(500).json({
+            message: "No se pudo actualizar el proyecto.",
+        });
+    }
+});
+
+// DELETE /api/projects/:id
+// Elimina un proyecto por su id.
+// Las tareas asociadas no se borran: quedan con projectId en null por onDelete: SetNull.
+router.delete("/:id", async (req, res) => {
+    const projectId = Number(req.params.id);
+
+    if (Number.isNaN(projectId)) {
+        return res.status(400).json({
+            message: "ID de proyecto no válido.",
+        });
+    }
+
+    try {
+        const project = await prisma.project.findUnique({
+            where: {
+                id: projectId,
+            },
+        });
+
+        if (!project) {
+            return res.status(404).json({
+                message: "Proyecto no encontrado.",
+            });
+        }
+
+        await prisma.project.delete({
+            where: {
+                id: projectId,
+            },
+        });
+
+        res.json({
+            message: "Proyecto eliminado correctamente.",
+            id: projectId,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "No se pudo eliminar el proyecto.",
+        });
+    }
+});
+
 export default router;
