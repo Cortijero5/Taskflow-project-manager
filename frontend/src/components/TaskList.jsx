@@ -1,6 +1,6 @@
 import TaskCard from "./TaskCard.jsx";
 
-function TaskList({ tasks, onDeleteTask, onUpdateTaskStatus }) {
+function TaskList({ tasks, onDeleteTask, onUpdateTaskStatus, onEditTask }) {
   // Si no hay tareas para mostrar, enseñamos un mensaje al usuario.
   if (tasks.length === 0) {
     return (
@@ -28,6 +28,8 @@ function TaskList({ tasks, onDeleteTask, onUpdateTaskStatus }) {
           priority={task.priority}
           onDelete={onDeleteTask}
           onStatusChange={onUpdateTaskStatus}
+          onStatusChange={onUpdateTaskStatus}
+          onEdit={onEditTask}
         />
       ))}
     </div>

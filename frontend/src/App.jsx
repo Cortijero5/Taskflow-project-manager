@@ -7,6 +7,7 @@ import {
   createTask,
   deleteTask,
   getTasks,
+  updateTask,
   updateTaskStatus,
 } from "./services/taskService.js";
 import ProjectForm from "./components/ProjectForm.jsx";
@@ -60,6 +61,10 @@ function App() {
     status: "TODO",
     priority: "MEDIUM",
   });
+
+  // Guarda el id de la tarea que estamos editando.
+  // Si es null, el formulario crea una tarea nueva.
+  const [editingTaskId, setEditingTaskId] = useState(null);
 
   // Guarda la lista de proyectos cargados desde el backend.
   const [projects, setProjects] = useState([]);
@@ -193,11 +198,13 @@ function App() {
     }
   }
 
-  // Controla el envío del formulario y crea una nueva tarea en el backend.
+  // Controla el envío del formulario.
+  // Si editingTaskId es null, crea una tarea.
+  // Si editingTaskId tiene valor, actualiza esa tarea.
   async function handleSubmit(event) {
     event.preventDefault();
 
-    // Evita crear tareas sin título o solo con espacios.
+    // Evita crear o editar tareas sin título o solo con espacios.
     if (!formData.title.trim()) {
       return;
     }
@@ -205,30 +212,41 @@ function App() {
     setTasksError("");
 
     try {
-      const data = await createTask({
-        ...formData,
-        projectId:
-          selectedProjectId === "unassigned" ? null : selectedProjectId,
-      });
+      if (editingTaskId) {
+        const data = await updateTask(editingTaskId, formData);
 
-      // Añadimos la tarea a la lista visible del proyecto seleccionado.
-      setTasks((currentTasks) => [data, ...currentTasks]);
+        // Sustituimos la tarea antigua por la tarea actualizada.
+        setTasks((currentTasks) =>
+          currentTasks.map((task) => (task.id === editingTaskId ? data : task)),
+        );
 
-      // Actualizamos también el contador de tareas dentro del proyecto.
-      // ProjectList usa project.tasks.length, así que si no actualizamos projects,
-      // la tarjeta del proyecto no cambia hasta refrescar.
-      setProjects((currentProjects) =>
-        currentProjects.map((project) =>
-          project.id === data.projectId
-            ? {
-                ...project,
-                tasks: [data, ...(project.tasks || [])],
-              }
-            : project,
-        ),
-      );
+        setEditingTaskId(null);
+      } else {
+        const data = await createTask({
+          ...formData,
+          projectId:
+            selectedProjectId === "unassigned" ? null : selectedProjectId,
+        });
 
-      // Limpiamos el formulario después de crear la tarea.
+        // Añadimos la tarea a la lista visible.
+        setTasks((currentTasks) => [data, ...currentTasks]);
+
+        // Si la tarea pertenece a un proyecto, actualizamos también su contador.
+        if (data.projectId) {
+          setProjects((currentProjects) =>
+            currentProjects.map((project) =>
+              project.id === data.projectId
+                ? {
+                    ...project,
+                    tasks: [data, ...(project.tasks || [])],
+                  }
+                : project,
+            ),
+          );
+        }
+      }
+
+      // Limpiamos el formulario después de crear o editar.
       setFormData({
         title: "",
         description: "",
@@ -236,11 +254,22 @@ function App() {
         priority: "MEDIUM",
       });
 
-      // Volvemos al filtro "Todas" para que la tarea recién creada sea visible.
       setSelectedStatus("ALL");
     } catch (error) {
       setTasksError(error.message);
     }
+  }
+
+  // Carga los datos de una tarea en el formulario para editarla.
+  function handleStartEditTask(task) {
+    setEditingTaskId(task.id);
+
+    setFormData({
+      title: task.title,
+      description: task.description || "",
+      status: task.status,
+      priority: task.priority,
+    });
   }
 
   // Carga los datos de un proyecto en el formulario para editarlo.
@@ -250,6 +279,18 @@ function App() {
     setProjectFormData({
       name: project.name,
       description: project.description || "",
+    });
+  }
+
+  // Cancela la edición y vuelve al modo crear tarea.
+  function handleCancelEditTask() {
+    setEditingTaskId(null);
+
+    setFormData({
+      title: "",
+      description: "",
+      status: "TODO",
+      priority: "MEDIUM",
     });
   }
 
@@ -408,6 +449,8 @@ function App() {
               formData={formData}
               onInputChange={handleInputChange}
               onSubmit={handleSubmit}
+              isEditing={editingTaskId !== null}
+              onCancelEdit={handleCancelEditTask}
             />
 
             <TaskFilters
@@ -431,6 +474,7 @@ function App() {
               tasks={filteredTasks}
               onDeleteTask={handleDeleteTask}
               onUpdateTaskStatus={handleUpdateTaskStatus}
+              onEditTask={handleStartEditTask}
             />
           </div>
         </div>
