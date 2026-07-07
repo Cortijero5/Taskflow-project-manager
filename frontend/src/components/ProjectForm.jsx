@@ -1,4 +1,10 @@
-function ProjectForm({ formData, onInputChange, onSubmit }) {
+function ProjectForm({
+  formData,
+  onInputChange,
+  onSubmit,
+  isEditing,
+  onCancelEdit,
+}) {
   return (
     <form
       onSubmit={onSubmit}
@@ -44,12 +50,24 @@ function ProjectForm({ formData, onInputChange, onSubmit }) {
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-      >
-        Crear proyecto
-      </button>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="submit"
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          {isEditing ? "Guardar cambios" : "Crear proyecto"}
+        </button>
+
+        {isEditing && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+          >
+            Cancelar
+          </button>
+        )}
+      </div>
     </form>
   );
 }

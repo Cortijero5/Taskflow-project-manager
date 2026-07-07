@@ -11,7 +11,12 @@ import {
 } from "./services/taskService.js";
 import ProjectForm from "./components/ProjectForm.jsx";
 import ProjectList from "./components/ProjectList.jsx";
-import { createProject, getProjects } from "./services/projectService.js";
+import {
+  createProject,
+  deleteProject,
+  getProjects,
+  updateProject,
+} from "./services/projectService.js";
 
 // Datos estáticos para las tarjetas informativas de la parte superior.
 // De momento están en frontend, pero más adelante parte de los datos vendrán de la API.
@@ -73,6 +78,9 @@ function App() {
     name: "",
     description: "",
   });
+  // Guarda el id del proyecto que estamos editando.
+  // Si es null, el formulario crea un proyecto nuevo.
+  const [editingProjectId, setEditingProjectId] = useState(null);
 
   // Calcula qué tareas se deben mostrar según el filtro activo.
   // Si el filtro es "ALL", mostramos todas. Si no, filtramos por status.
@@ -149,7 +157,7 @@ function App() {
     });
   }
 
-  // Crea un proyecto usando la API y lo añade al estado local.
+  // Crea o actualiza un proyecto usando la API.
   async function handleProjectSubmit(event) {
     event.preventDefault();
 
@@ -160,16 +168,30 @@ function App() {
     setProjectsError("");
 
     try {
-      const data = await createProject(projectFormData);
+      if (editingProjectId) {
+        const updatedProject = await updateProject(
+          editingProjectId,
+          projectFormData,
+        );
 
-      setProjects([data, ...projects]);
+        setProjects((currentProjects) =>
+          currentProjects.map((project) =>
+            project.id === editingProjectId ? updatedProject : project,
+          ),
+        );
+
+        setEditingProjectId(null);
+      } else {
+        const newProject = await createProject(projectFormData);
+
+        setProjects([newProject, ...projects]);
+        setSelectedProjectId(newProject.id);
+      }
 
       setProjectFormData({
         name: "",
         description: "",
       });
-
-      setSelectedProjectId(data.id);
     } catch (error) {
       setProjectsError(error.message);
     }
@@ -225,6 +247,54 @@ function App() {
       setSelectedStatus("ALL");
     } catch (error) {
       setTasksError(error.message);
+    }
+  }
+
+  // Carga los datos de un proyecto en el formulario para editarlo.
+  function handleStartEditProject(project) {
+    setEditingProjectId(project.id);
+
+    setProjectFormData({
+      name: project.name,
+      description: project.description || "",
+    });
+  }
+
+  // Cancela la edición y vuelve al modo crear proyecto.
+  function handleCancelEditProject() {
+    setEditingProjectId(null);
+
+    setProjectFormData({
+      name: "",
+      description: "",
+    });
+  }
+
+  // Elimina un proyecto usando la API y actualiza el estado local.
+  async function handleDeleteProject(projectId) {
+    const confirmDelete = window.confirm(
+      "¿Seguro que quieres eliminar este proyecto? Sus tareas quedarán sin proyecto.",
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    setProjectsError("");
+
+    try {
+      await deleteProject(projectId);
+
+      setProjects((currentProjects) =>
+        currentProjects.filter((project) => project.id !== projectId),
+      );
+
+      if (selectedProjectId === projectId) {
+        setSelectedProjectId(null);
+        setTasks([]);
+      }
+    } catch (error) {
+      setProjectsError(error.message);
     }
   }
 
@@ -306,6 +376,8 @@ function App() {
               formData={projectFormData}
               onInputChange={handleProjectInputChange}
               onSubmit={handleProjectSubmit}
+              isEditing={editingProjectId !== null}
+              onCancelEdit={handleCancelEditProject}
             />
 
             {projectsLoading && (
@@ -324,6 +396,8 @@ function App() {
               projects={projects}
               selectedProjectId={selectedProjectId}
               onSelectProject={setSelectedProjectId}
+              onEditProject={handleStartEditProject}
+              onDeleteProject={handleDeleteProject}
             />
           </div>
 
