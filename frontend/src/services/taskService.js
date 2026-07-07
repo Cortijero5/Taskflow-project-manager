@@ -37,6 +37,19 @@ export async function createTask(taskData) {
     return handleResponse(response);
 }
 
+// Actualiza una tarea existente.
+export async function updateTask(taskId, taskData) {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(taskData),
+    });
+
+    return handleResponse(response);
+}
+
 // Elimina una tarea por su id.
 export async function deleteTask(taskId) {
     const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {

@@ -114,6 +114,74 @@ router.post("/", async (req, res) => {
     }
 });
 
+// Ruta para actualizar datos generales de una tarea.
+// PATCH /api/tasks/:id
+router.patch("/:id", async (req, res) => {
+    const taskId = Number(req.params.id);
+    const { title, description, status, priority } = req.body;
+
+    if (Number.isNaN(taskId)) {
+        return res.status(400).json({
+            message: "ID de tarea no válido.",
+        });
+    }
+
+    // Si se manda title, no permitimos que venga vacío.
+    if (title !== undefined && !title.trim()) {
+        return res.status(400).json({
+            message: "El título de la tarea no puede estar vacío.",
+        });
+    }
+
+    // Si se manda status, validamos que sea correcto.
+    if (status !== undefined && !allowedStatuses.includes(status)) {
+        return res.status(400).json({
+            message: "Estado de tarea no válido.",
+        });
+    }
+
+    // Si se manda priority, validamos que sea correcta.
+    if (priority !== undefined && !allowedPriorities.includes(priority)) {
+        return res.status(400).json({
+            message: "Prioridad de tarea no válida.",
+        });
+    }
+
+    try {
+        const task = await prisma.task.findUnique({
+            where: {
+                id: taskId,
+            },
+        });
+
+        if (!task) {
+            return res.status(404).json({
+                message: "Tarea no encontrada.",
+            });
+        }
+
+        const updatedTask = await prisma.task.update({
+            where: {
+                id: taskId,
+            },
+            data: {
+                ...(title !== undefined && { title: title.trim() }),
+                ...(description !== undefined && {
+                    description: description.trim() || null,
+                }),
+                ...(status !== undefined && { status }),
+                ...(priority !== undefined && { priority }),
+            },
+        });
+
+        res.json(updatedTask);
+    } catch (error) {
+        res.status(500).json({
+            message: "No se pudo actualizar la tarea.",
+        });
+    }
+});
+
 // Ruta para eliminar una tarea por su id en MySQL.
 // DELETE /api/tasks/:id
 router.delete("/:id", async (req, res) => {
