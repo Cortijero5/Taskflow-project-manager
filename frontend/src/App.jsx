@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import FeatureCard from "./components/FeatureCard.jsx";
 import TaskForm from "./components/TaskForm.jsx";
 import TaskFilters from "./components/TaskFilters.jsx";
-import TaskList from "./components/TaskList.jsx";
+import TaskBoard from "./components/TaskBoard.jsx";
 import {
   createTask,
   deleteTask,
@@ -470,7 +470,7 @@ function App() {
               </p>
             )}
 
-            <TaskList
+            <TaskBoard
               tasks={filteredTasks}
               onDeleteTask={handleDeleteTask}
               onUpdateTaskStatus={handleUpdateTaskStatus}
