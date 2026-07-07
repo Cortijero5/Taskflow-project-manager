@@ -65,7 +65,7 @@ function App() {
   const [projects, setProjects] = useState([]);
 
   // Guarda el proyecto seleccionado actualmente.
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState("unassigned");
 
   // Controla si estamos cargando proyectos desde el backend.
   const [projectsLoading, setProjectsLoading] = useState(false);
@@ -89,15 +89,11 @@ function App() {
       ? tasks
       : tasks.filter((task) => task.status === selectedStatus);
 
-  // Carga las tareas del proyecto seleccionado.
-  // Si no hay proyecto seleccionado, no mostramos tareas.
+  // Carga las tareas según la vista seleccionada.
+  // "unassigned" muestra tareas sin proyecto.
+  // Un id numérico muestra tareas de ese proyecto.
   useEffect(() => {
     async function loadTasks() {
-      if (!selectedProjectId) {
-        setTasks([]);
-        return;
-      }
-
       setTasksLoading(true);
       setTasksError("");
 
@@ -207,15 +203,12 @@ function App() {
     }
 
     setTasksError("");
-    if (!selectedProjectId) {
-      setTasksError("Selecciona un proyecto antes de crear una tarea.");
-      return;
-    }
 
     try {
       const data = await createTask({
         ...formData,
-        projectId: selectedProjectId,
+        projectId:
+          selectedProjectId === "unassigned" ? null : selectedProjectId,
       });
 
       // Añadimos la tarea a la lista visible del proyecto seleccionado.

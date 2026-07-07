@@ -17,17 +17,20 @@ router.get("/", async (req, res) => {
     let where = {};
 
     if (projectId) {
-        const parsedProjectId = Number(projectId);
+        if (projectId === "unassigned") {
+            where.projectId = null;
+        } else {
+            const parsedProjectId = Number(projectId);
 
-        if (Number.isNaN(parsedProjectId)) {
-            return res.status(400).json({
-                message: "ID de proyecto no válido.",
-            });
+            if (Number.isNaN(parsedProjectId)) {
+                return res.status(400).json({
+                    message: "ID de proyecto no válido.",
+                });
+            }
+
+            where.projectId = parsedProjectId;
         }
-
-        where.projectId = parsedProjectId;
     }
-
     try {
         const tasks = await prisma.task.findMany({
             where,

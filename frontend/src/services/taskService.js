@@ -15,6 +15,7 @@ async function handleResponse(response) {
 
 // Obtiene tareas desde el backend.
 // Si recibe projectId, pide solo las tareas de ese proyecto.
+// Si recibe "unassigned", pide tareas sin proyecto.
 export async function getTasks(projectId) {
     const url = projectId
         ? `${API_BASE_URL}/tasks?projectId=${projectId}`
