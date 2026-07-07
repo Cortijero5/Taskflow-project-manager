@@ -13,9 +13,14 @@ async function handleResponse(response) {
     return data;
 }
 
-// Obtiene todas las tareas desde el backend.
-export async function getTasks() {
-    const response = await fetch(`${API_BASE_URL}/tasks`);
+// Obtiene tareas desde el backend.
+// Si recibe projectId, pide solo las tareas de ese proyecto.
+export async function getTasks(projectId) {
+    const url = projectId
+        ? `${API_BASE_URL}/tasks?projectId=${projectId}`
+        : `${API_BASE_URL}/tasks`;
+
+    const response = await fetch(url);
     return handleResponse(response);
 }
 

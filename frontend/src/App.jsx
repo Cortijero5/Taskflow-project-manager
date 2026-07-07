@@ -81,14 +81,20 @@ function App() {
       ? tasks
       : tasks.filter((task) => task.status === selectedStatus);
 
-  // Carga las tareas desde el backend cuando se monta el componente App.
+  // Carga las tareas del proyecto seleccionado.
+  // Si no hay proyecto seleccionado, no mostramos tareas.
   useEffect(() => {
     async function loadTasks() {
+      if (!selectedProjectId) {
+        setTasks([]);
+        return;
+      }
+
       setTasksLoading(true);
       setTasksError("");
 
       try {
-        const data = await getTasks();
+        const data = await getTasks(selectedProjectId);
         setTasks(data);
       } catch (error) {
         setTasksError(error.message);
@@ -98,7 +104,7 @@ function App() {
     }
 
     loadTasks();
-  }, []);
+  }, [selectedProjectId]);
 
   // Carga los proyectos desde el backend cuando se monta App.
   useEffect(() => {
@@ -109,6 +115,10 @@ function App() {
       try {
         const data = await getProjects();
         setProjects(data);
+
+        if (data.length > 0) {
+          setSelectedProjectId(data[0].id);
+        }
       } catch (error) {
         setProjectsError(error.message);
       } finally {
@@ -175,12 +185,33 @@ function App() {
     }
 
     setTasksError("");
+    if (!selectedProjectId) {
+      setTasksError("Selecciona un proyecto antes de crear una tarea.");
+      return;
+    }
 
     try {
-      const data = await createTask(formData);
+      const data = await createTask({
+        ...formData,
+        projectId: selectedProjectId,
+      });
 
-      // Añadimos al estado la tarea que nos devuelve el backend.
-      setTasks([data, ...tasks]);
+      // Añadimos la tarea a la lista visible del proyecto seleccionado.
+      setTasks((currentTasks) => [data, ...currentTasks]);
+
+      // Actualizamos también el contador de tareas dentro del proyecto.
+      // ProjectList usa project.tasks.length, así que si no actualizamos projects,
+      // la tarjeta del proyecto no cambia hasta refrescar.
+      setProjects((currentProjects) =>
+        currentProjects.map((project) =>
+          project.id === data.projectId
+            ? {
+                ...project,
+                tasks: [data, ...(project.tasks || [])],
+              }
+            : project,
+        ),
+      );
 
       // Limpiamos el formulario después de crear la tarea.
       setFormData({
@@ -207,6 +238,13 @@ function App() {
       // Quitamos la tarea eliminada del estado local para actualizar la pantalla.
       setTasks((currentTasks) =>
         currentTasks.filter((task) => task.id !== taskId),
+      );
+      // Quitamos también la tarea de los proyectos para actualizar el contador.
+      setProjects((currentProjects) =>
+        currentProjects.map((project) => ({
+          ...project,
+          tasks: (project.tasks || []).filter((task) => task.id !== taskId),
+        })),
       );
     } catch (error) {
       setTasksError(error.message);
@@ -292,11 +330,10 @@ function App() {
           <div className="mt-10">
             <div className="mb-4">
               <h2 className="text-xl font-bold text-slate-900">
-                Tareas recientes
+                Tareas del proyecto
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Primeras tareas de ejemplo que más adelante vendrán desde la
-                API.
+                Selecciona un proyecto y gestiona sus tareas asociadas.
               </p>
             </div>
 

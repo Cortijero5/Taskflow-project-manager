@@ -7,11 +7,30 @@ const router = express.Router();
 const allowedStatuses = ["TODO", "IN_PROGRESS", "DONE"];
 const allowedPriorities = ["LOW", "MEDIUM", "HIGH"];
 
-// Ruta para obtener todas las tareas desde MySQL.
+// Ruta para obtener tareas desde MySQL.
+// Si llega projectId por query param, devuelve solo tareas de ese proyecto.
 // GET /api/tasks
+// GET /api/tasks?projectId=1
 router.get("/", async (req, res) => {
+    const { projectId } = req.query;
+
+    let where = {};
+
+    if (projectId) {
+        const parsedProjectId = Number(projectId);
+
+        if (Number.isNaN(parsedProjectId)) {
+            return res.status(400).json({
+                message: "ID de proyecto no válido.",
+            });
+        }
+
+        where.projectId = parsedProjectId;
+    }
+
     try {
         const tasks = await prisma.task.findMany({
+            where,
             orderBy: {
                 createdAt: "desc",
             },
@@ -28,7 +47,7 @@ router.get("/", async (req, res) => {
 // Ruta para crear una nueva tarea en MySQL.
 // POST /api/tasks
 router.post("/", async (req, res) => {
-    const { title, description, status, priority } = req.body;
+    const { title, description, status, priority, projectId } = req.body;
 
     // Validación básica: no permitimos tareas sin título.
     if (!title || !title.trim()) {
@@ -51,13 +70,39 @@ router.post("/", async (req, res) => {
         });
     }
 
+    let parsedProjectId = null;
+
+    if (projectId) {
+        parsedProjectId = Number(projectId);
+
+        if (Number.isNaN(parsedProjectId)) {
+            return res.status(400).json({
+                message: "ID de proyecto no válido.",
+            });
+        }
+    }
+
     try {
+        if (parsedProjectId) {
+            const project = await prisma.project.findUnique({
+                where: {
+                    id: parsedProjectId,
+                },
+            });
+
+            if (!project) {
+                return res.status(404).json({
+                    message: "Proyecto no encontrado.",
+                });
+            }
+        }
         const newTask = await prisma.task.create({
             data: {
                 title: title.trim(),
                 description: description?.trim() || null,
                 status: status || "TODO",
                 priority: priority || "MEDIUM",
+                projectId: parsedProjectId,
             },
         });
 
