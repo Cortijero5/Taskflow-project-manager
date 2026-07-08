@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -123,6 +124,36 @@ router.post("/login", async (req, res) => {
     } catch (error) {
         res.status(500).json({
             message: "No se pudo iniciar sesión.",
+        });
+    }
+});
+
+// GET /api/auth/me
+// Devuelve los datos del usuario autenticado usando el token JWT.
+router.get("/me", authMiddleware, async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {
+                id: req.user.userId,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                createdAt: true,
+            },
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Usuario no encontrado.",
+            });
+        }
+
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({
+            message: "No se pudo cargar el usuario.",
         });
     }
 });
