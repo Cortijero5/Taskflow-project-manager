@@ -13,6 +13,18 @@ async function handleResponse(response) {
     return data;
 }
 
+function getAuthHeaders() {
+    const token = localStorage.getItem("taskflow_token");
+
+    if (!token) {
+        return {};
+    }
+
+    return {
+        Authorization: `Bearer ${token}`,
+    };
+}
+
 // Obtiene tareas desde el backend.
 // Si recibe projectId, pide solo las tareas de ese proyecto.
 // Si recibe "unassigned", pide tareas sin proyecto.
@@ -21,7 +33,12 @@ export async function getTasks(projectId) {
         ? `${API_BASE_URL}/tasks?projectId=${projectId}`
         : `${API_BASE_URL}/tasks`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+        headers: {
+            ...getAuthHeaders(),
+        },
+    });
+
     return handleResponse(response);
 }
 
@@ -31,6 +48,7 @@ export async function createTask(taskData) {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
         },
         body: JSON.stringify(taskData),
     });
@@ -44,6 +62,7 @@ export async function updateTask(taskId, taskData) {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
         },
         body: JSON.stringify(taskData),
     });
@@ -55,6 +74,9 @@ export async function updateTask(taskId, taskData) {
 export async function deleteTask(taskId) {
     const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
         method: "DELETE",
+        headers: {
+            ...getAuthHeaders(),
+        },
     });
 
     return handleResponse(response);
@@ -66,6 +88,7 @@ export async function updateTaskStatus(taskId, newStatus) {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
         },
         body: JSON.stringify({
             status: newStatus,

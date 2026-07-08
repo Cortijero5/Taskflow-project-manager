@@ -12,9 +12,26 @@ async function handleResponse(response) {
     return data;
 }
 
+function getAuthHeaders() {
+    const token = localStorage.getItem("taskflow_token");
+
+    if (!token) {
+        return {};
+    }
+
+    return {
+        Authorization: `Bearer ${token}`,
+    };
+}
+
 // Obtiene todos los proyectos desde el backend.
 export async function getProjects() {
-    const response = await fetch(`${API_BASE_URL}/projects`);
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+        headers: {
+            ...getAuthHeaders(),
+        },
+    });
+
     return handleResponse(response);
 }
 
@@ -24,6 +41,7 @@ export async function createProject(projectData) {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
         },
         body: JSON.stringify(projectData),
     });
@@ -37,6 +55,7 @@ export async function updateProject(projectId, projectData) {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
         },
         body: JSON.stringify(projectData),
     });
@@ -48,6 +67,9 @@ export async function updateProject(projectId, projectData) {
 export async function deleteProject(projectId) {
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
         method: "DELETE",
+        headers: {
+            ...getAuthHeaders(),
+        },
     });
 
     return handleResponse(response);

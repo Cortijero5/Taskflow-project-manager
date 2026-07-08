@@ -18,9 +18,13 @@ import {
   getProjects,
   updateProject,
 } from "./services/projectService.js";
+import AuthForm from "./components/AuthForm.jsx";
+import {
+  getCurrentUser,
+  loginUser,
+  registerUser,
+} from "./services/authService.js";
 
-// Datos estáticos para las tarjetas informativas de la parte superior.
-// De momento están en frontend, pero más adelante parte de los datos vendrán de la API.
 const features = [
   {
     id: 1,
@@ -40,21 +44,35 @@ const features = [
 ];
 
 function App() {
-  // Guarda el filtro de estado seleccionado actualmente.
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authMode, setAuthMode] = useState("login");
+
+  const [authFormData, setAuthFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const [projects, setProjects] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState("unassigned");
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectsError, setProjectsError] = useState("");
+
+  const [projectFormData, setProjectFormData] = useState({
+    name: "",
+    description: "",
+  });
+
+  const [editingProjectId, setEditingProjectId] = useState(null);
+
   const [selectedStatus, setSelectedStatus] = useState("ALL");
-
-  // Guarda la lista de tareas actual.
-  // De momento empieza vacía; más adelante se cargará desde la API.
   const [tasks, setTasks] = useState([]);
-
-  // Controla si estamos cargando tareas desde el backend.
   const [tasksLoading, setTasksLoading] = useState(false);
-
-  // Guarda un posible error al cargar o crear tareas.
   const [tasksError, setTasksError] = useState("");
 
-  // Guarda los valores actuales del formulario.
-  // Cada input/select estará conectado a una propiedad de este objeto.
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -62,43 +80,73 @@ function App() {
     priority: "MEDIUM",
   });
 
-  // Guarda el id de la tarea que estamos editando.
-  // Si es null, el formulario crea una tarea nueva.
   const [editingTaskId, setEditingTaskId] = useState(null);
 
-  // Guarda la lista de proyectos cargados desde el backend.
-  const [projects, setProjects] = useState([]);
-
-  // Guarda el proyecto seleccionado actualmente.
-  const [selectedProjectId, setSelectedProjectId] = useState("unassigned");
-
-  // Controla si estamos cargando proyectos desde el backend.
-  const [projectsLoading, setProjectsLoading] = useState(false);
-
-  // Guarda errores relacionados con proyectos.
-  const [projectsError, setProjectsError] = useState("");
-
-  // Guarda los valores actuales del formulario de proyecto.
-  const [projectFormData, setProjectFormData] = useState({
-    name: "",
-    description: "",
-  });
-  // Guarda el id del proyecto que estamos editando.
-  // Si es null, el formulario crea un proyecto nuevo.
-  const [editingProjectId, setEditingProjectId] = useState(null);
-
-  // Calcula qué tareas se deben mostrar según el filtro activo.
-  // Si el filtro es "ALL", mostramos todas. Si no, filtramos por status.
   const filteredTasks =
     selectedStatus === "ALL"
       ? tasks
       : tasks.filter((task) => task.status === selectedStatus);
 
-  // Carga las tareas según la vista seleccionada.
-  // "unassigned" muestra tareas sin proyecto.
-  // Un id numérico muestra tareas de ese proyecto.
+  // Comprueba si hay sesión guardada al cargar la app.
+  useEffect(() => {
+    async function loadCurrentUser() {
+      const token = localStorage.getItem("taskflow_token");
+
+      if (!token) {
+        setAuthLoading(false);
+        return;
+      }
+
+      try {
+        const user = await getCurrentUser(token);
+        setCurrentUser(user);
+      } catch (error) {
+        localStorage.removeItem("taskflow_token");
+        setCurrentUser(null);
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+
+    loadCurrentUser();
+  }, []);
+
+  // Carga proyectos solo cuando ya hay usuario autenticado.
+  useEffect(() => {
+    async function loadProjects() {
+      if (!currentUser) {
+        return;
+      }
+
+      setProjectsLoading(true);
+      setProjectsError("");
+
+      try {
+        const data = await getProjects();
+        setProjects(data);
+
+        if (data.length > 0) {
+          setSelectedProjectId(data[0].id);
+        } else {
+          setSelectedProjectId("unassigned");
+        }
+      } catch (error) {
+        setProjectsError(error.message);
+      } finally {
+        setProjectsLoading(false);
+      }
+    }
+
+    loadProjects();
+  }, [currentUser]);
+
+  // Carga tareas cuando hay usuario y cambia la vista/proyecto seleccionado.
   useEffect(() => {
     async function loadTasks() {
+      if (!currentUser) {
+        return;
+      }
+
       setTasksLoading(true);
       setTasksError("");
 
@@ -113,32 +161,82 @@ function App() {
     }
 
     loadTasks();
-  }, [selectedProjectId]);
+  }, [currentUser, selectedProjectId]);
 
-  // Carga los proyectos desde el backend cuando se monta App.
-  useEffect(() => {
-    async function loadProjects() {
-      setProjectsLoading(true);
-      setProjectsError("");
+  function handleAuthInputChange(event) {
+    const { name, value } = event.target;
 
-      try {
-        const data = await getProjects();
-        setProjects(data);
+    setAuthFormData({
+      ...authFormData,
+      [name]: value,
+    });
+  }
 
-        if (data.length > 0) {
-          setSelectedProjectId(data[0].id);
-        }
-      } catch (error) {
-        setProjectsError(error.message);
-      } finally {
-        setProjectsLoading(false);
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+
+    setAuthError("");
+    setAuthSubmitting(true);
+
+    try {
+      if (authMode === "register") {
+        await registerUser(authFormData);
       }
+
+      const data = await loginUser({
+        email: authFormData.email,
+        password: authFormData.password,
+      });
+
+      localStorage.setItem("taskflow_token", data.token);
+      setCurrentUser(data.user);
+
+      setAuthFormData({
+        name: "",
+        email: "",
+        password: "",
+      });
+    } catch (error) {
+      setAuthError(error.message);
+    } finally {
+      setAuthSubmitting(false);
     }
+  }
 
-    loadProjects();
-  }, []);
+  function handleAuthModeChange() {
+    setAuthError("");
+    setAuthMode((currentMode) =>
+      currentMode === "login" ? "register" : "login",
+    );
+  }
 
-  // Actualiza el estado del formulario cuando el usuario escribe o selecciona algo.
+  function handleLogout() {
+    localStorage.removeItem("taskflow_token");
+
+    setCurrentUser(null);
+    setProjects([]);
+    setTasks([]);
+    setSelectedProjectId("unassigned");
+    setSelectedStatus("ALL");
+
+    setProjectFormData({
+      name: "",
+      description: "",
+    });
+
+    setFormData({
+      title: "",
+      description: "",
+      status: "TODO",
+      priority: "MEDIUM",
+    });
+
+    setEditingProjectId(null);
+    setEditingTaskId(null);
+    setProjectsError("");
+    setTasksError("");
+  }
+
   function handleInputChange(event) {
     const { name, value } = event.target;
 
@@ -148,7 +246,6 @@ function App() {
     });
   }
 
-  // Actualiza el formulario de proyectos cuando el usuario escribe.
   function handleProjectInputChange(event) {
     const { name, value } = event.target;
 
@@ -158,7 +255,6 @@ function App() {
     });
   }
 
-  // Crea o actualiza un proyecto usando la API.
   async function handleProjectSubmit(event) {
     event.preventDefault();
 
@@ -185,7 +281,7 @@ function App() {
       } else {
         const newProject = await createProject(projectFormData);
 
-        setProjects([newProject, ...projects]);
+        setProjects((currentProjects) => [newProject, ...currentProjects]);
         setSelectedProjectId(newProject.id);
       }
 
@@ -198,81 +294,6 @@ function App() {
     }
   }
 
-  // Controla el envío del formulario.
-  // Si editingTaskId es null, crea una tarea.
-  // Si editingTaskId tiene valor, actualiza esa tarea.
-  async function handleSubmit(event) {
-    event.preventDefault();
-
-    // Evita crear o editar tareas sin título o solo con espacios.
-    if (!formData.title.trim()) {
-      return;
-    }
-
-    setTasksError("");
-
-    try {
-      if (editingTaskId) {
-        const data = await updateTask(editingTaskId, formData);
-
-        // Sustituimos la tarea antigua por la tarea actualizada.
-        setTasks((currentTasks) =>
-          currentTasks.map((task) => (task.id === editingTaskId ? data : task)),
-        );
-
-        setEditingTaskId(null);
-      } else {
-        const data = await createTask({
-          ...formData,
-          projectId:
-            selectedProjectId === "unassigned" ? null : selectedProjectId,
-        });
-
-        // Añadimos la tarea a la lista visible.
-        setTasks((currentTasks) => [data, ...currentTasks]);
-
-        // Si la tarea pertenece a un proyecto, actualizamos también su contador.
-        if (data.projectId) {
-          setProjects((currentProjects) =>
-            currentProjects.map((project) =>
-              project.id === data.projectId
-                ? {
-                    ...project,
-                    tasks: [data, ...(project.tasks || [])],
-                  }
-                : project,
-            ),
-          );
-        }
-      }
-
-      // Limpiamos el formulario después de crear o editar.
-      setFormData({
-        title: "",
-        description: "",
-        status: "TODO",
-        priority: "MEDIUM",
-      });
-
-      setSelectedStatus("ALL");
-    } catch (error) {
-      setTasksError(error.message);
-    }
-  }
-
-  // Carga los datos de una tarea en el formulario para editarla.
-  function handleStartEditTask(task) {
-    setEditingTaskId(task.id);
-
-    setFormData({
-      title: task.title,
-      description: task.description || "",
-      status: task.status,
-      priority: task.priority,
-    });
-  }
-
-  // Carga los datos de un proyecto en el formulario para editarlo.
   function handleStartEditProject(project) {
     setEditingProjectId(project.id);
 
@@ -282,19 +303,6 @@ function App() {
     });
   }
 
-  // Cancela la edición y vuelve al modo crear tarea.
-  function handleCancelEditTask() {
-    setEditingTaskId(null);
-
-    setFormData({
-      title: "",
-      description: "",
-      status: "TODO",
-      priority: "MEDIUM",
-    });
-  }
-
-  // Cancela la edición y vuelve al modo crear proyecto.
   function handleCancelEditProject() {
     setEditingProjectId(null);
 
@@ -304,7 +312,6 @@ function App() {
     });
   }
 
-  // Elimina un proyecto usando la API y actualiza el estado local.
   async function handleDeleteProject(projectId) {
     const confirmDelete = window.confirm(
       "¿Seguro que quieres eliminar este proyecto? Sus tareas quedarán sin proyecto.",
@@ -324,26 +331,108 @@ function App() {
       );
 
       if (selectedProjectId === projectId) {
-        setSelectedProjectId(null);
-        setTasks([]);
+        setSelectedProjectId("unassigned");
       }
     } catch (error) {
       setProjectsError(error.message);
     }
   }
 
-  // Elimina una tarea usando la API y actualiza el estado local.
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!formData.title.trim()) {
+      return;
+    }
+
+    setTasksError("");
+
+    try {
+      if (editingTaskId) {
+        const data = await updateTask(editingTaskId, formData);
+
+        setTasks((currentTasks) =>
+          currentTasks.map((task) => (task.id === editingTaskId ? data : task)),
+        );
+
+        setProjects((currentProjects) =>
+          currentProjects.map((project) => ({
+            ...project,
+            tasks: (project.tasks || []).map((task) =>
+              task.id === editingTaskId ? data : task,
+            ),
+          })),
+        );
+
+        setEditingTaskId(null);
+      } else {
+        const data = await createTask({
+          ...formData,
+          projectId:
+            selectedProjectId === "unassigned" ? null : selectedProjectId,
+        });
+
+        setTasks((currentTasks) => [data, ...currentTasks]);
+
+        if (data.projectId) {
+          setProjects((currentProjects) =>
+            currentProjects.map((project) =>
+              project.id === data.projectId
+                ? {
+                    ...project,
+                    tasks: [data, ...(project.tasks || [])],
+                  }
+                : project,
+            ),
+          );
+        }
+      }
+
+      setFormData({
+        title: "",
+        description: "",
+        status: "TODO",
+        priority: "MEDIUM",
+      });
+
+      setSelectedStatus("ALL");
+    } catch (error) {
+      setTasksError(error.message);
+    }
+  }
+
+  function handleStartEditTask(task) {
+    setEditingTaskId(task.id);
+
+    setFormData({
+      title: task.title,
+      description: task.description || "",
+      status: task.status,
+      priority: task.priority,
+    });
+  }
+
+  function handleCancelEditTask() {
+    setEditingTaskId(null);
+
+    setFormData({
+      title: "",
+      description: "",
+      status: "TODO",
+      priority: "MEDIUM",
+    });
+  }
+
   async function handleDeleteTask(taskId) {
     setTasksError("");
 
     try {
       await deleteTask(taskId);
 
-      // Quitamos la tarea eliminada del estado local para actualizar la pantalla.
       setTasks((currentTasks) =>
         currentTasks.filter((task) => task.id !== taskId),
       );
-      // Quitamos también la tarea de los proyectos para actualizar el contador.
+
       setProjects((currentProjects) =>
         currentProjects.map((project) => ({
           ...project,
@@ -355,38 +444,90 @@ function App() {
     }
   }
 
-  // Actualiza el estado de una tarea usando la API.
   async function handleUpdateTaskStatus(taskId, newStatus) {
     setTasksError("");
 
     try {
       const data = await updateTaskStatus(taskId, newStatus);
 
-      // Reemplazamos en el estado local la tarea antigua por la actualizada.
       setTasks((currentTasks) =>
         currentTasks.map((task) => (task.id === taskId ? data : task)),
+      );
+
+      setProjects((currentProjects) =>
+        currentProjects.map((project) => ({
+          ...project,
+          tasks: (project.tasks || []).map((task) =>
+            task.id === taskId ? data : task,
+          ),
+        })),
       );
     } catch (error) {
       setTasksError(error.message);
     }
   }
 
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-slate-100 px-6 py-10">
+        <section className="mx-auto max-w-md rounded-2xl bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-medium text-slate-600">
+            Cargando sesión...
+          </p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <AuthForm
+        mode={authMode}
+        formData={authFormData}
+        onInputChange={handleAuthInputChange}
+        onSubmit={handleAuthSubmit}
+        onModeChange={handleAuthModeChange}
+        error={authError}
+        loading={authSubmitting}
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10">
       <section className="mx-auto max-w-5xl">
         <div className="rounded-2xl bg-white p-8 shadow-sm">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-blue-600">
-            TaskFlow
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-blue-600">
+                TaskFlow
+              </p>
 
-          <h1 className="text-3xl font-bold text-slate-900">
-            Gestor de proyectos y tareas
-          </h1>
+              <h1 className="text-3xl font-bold text-slate-900">
+                Gestor de proyectos y tareas
+              </h1>
 
-          <p className="mt-4 max-w-2xl text-slate-600">
-            Proyecto full-stack inspirado en Trello, desarrollado con React,
-            Tailwind CSS, Express, MySQL y Prisma.
-          </p>
+              <p className="mt-4 max-w-2xl text-slate-600">
+                Proyecto full-stack inspirado en Trello, desarrollado con React,
+                Tailwind CSS, Express, MySQL y Prisma.
+              </p>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Sesión iniciada como{" "}
+                <span className="font-semibold text-slate-700">
+                  {currentUser.email}
+                </span>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+            >
+              Cerrar sesión
+            </button>
+          </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {features.map((feature) => (
