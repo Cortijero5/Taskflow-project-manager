@@ -24,6 +24,7 @@ import {
   loginUser,
   registerUser,
 } from "./services/authService.js";
+import DashboardHeader from "./components/DashboardHeader.jsx";
 
 const features = [
   {
@@ -497,37 +498,7 @@ function App() {
     <main className="min-h-screen bg-slate-100 px-6 py-10">
       <section className="mx-auto max-w-5xl">
         <div className="rounded-2xl bg-white p-8 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-blue-600">
-                TaskFlow
-              </p>
-
-              <h1 className="text-3xl font-bold text-slate-900">
-                Gestor de proyectos y tareas
-              </h1>
-
-              <p className="mt-4 max-w-2xl text-slate-600">
-                Proyecto full-stack inspirado en Trello, desarrollado con React,
-                Tailwind CSS, Express, MySQL y Prisma.
-              </p>
-
-              <p className="mt-2 text-sm text-slate-500">
-                Sesión iniciada como{" "}
-                <span className="font-semibold text-slate-700">
-                  {currentUser.email}
-                </span>
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
-            >
-              Cerrar sesión
-            </button>
-          </div>
+          <DashboardHeader currentUser={currentUser} onLogout={handleLogout} />
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {features.map((feature) => (
