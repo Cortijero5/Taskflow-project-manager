@@ -10,8 +10,7 @@ import {
   updateTask,
   updateTaskStatus,
 } from "./services/taskService.js";
-import ProjectForm from "./components/ProjectForm.jsx";
-import ProjectList from "./components/ProjectList.jsx";
+import ProjectsSection from "./components/ProjectsSection.jsx";
 import {
   createProject,
   deleteProject,
@@ -510,42 +509,20 @@ function App() {
             ))}
           </div>
 
-          <div className="mt-10">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-slate-900">Proyectos</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Crea y selecciona proyectos para organizar mejor tus tareas.
-              </p>
-            </div>
-
-            <ProjectForm
-              formData={projectFormData}
-              onInputChange={handleProjectInputChange}
-              onSubmit={handleProjectSubmit}
-              isEditing={editingProjectId !== null}
-              onCancelEdit={handleCancelEditProject}
-            />
-
-            {projectsLoading && (
-              <p className="mb-4 text-sm font-medium text-slate-600">
-                Cargando proyectos desde la API...
-              </p>
-            )}
-
-            {projectsError && (
-              <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
-                {projectsError}
-              </p>
-            )}
-
-            <ProjectList
-              projects={projects}
-              selectedProjectId={selectedProjectId}
-              onSelectProject={setSelectedProjectId}
-              onEditProject={handleStartEditProject}
-              onDeleteProject={handleDeleteProject}
-            />
-          </div>
+          <ProjectsSection
+            projectFormData={projectFormData}
+            onProjectInputChange={handleProjectInputChange}
+            onProjectSubmit={handleProjectSubmit}
+            isEditingProject={editingProjectId !== null}
+            onCancelEditProject={handleCancelEditProject}
+            projectsLoading={projectsLoading}
+            projectsError={projectsError}
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            onSelectProject={setSelectedProjectId}
+            onEditProject={handleStartEditProject}
+            onDeleteProject={handleDeleteProject}
+          />
 
           <div className="mt-10">
             <div className="mb-4">
