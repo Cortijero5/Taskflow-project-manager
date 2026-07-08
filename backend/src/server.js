@@ -1,7 +1,9 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 // Creamos la aplicación de Express.
 // "app" será el objeto principal donde configuramos rutas y middlewares.
@@ -37,6 +39,8 @@ app.use("/api/tasks", taskRoutes);
 
 // Conectamos todas las rutas relacionadas con proyectos.
 app.use("/api/projects", projectRoutes);
+
+app.use("/api/auth", authRoutes);
 
 // Arrancamos el servidor y lo dejamos escuchando peticiones.
 app.listen(PORT, () => {
