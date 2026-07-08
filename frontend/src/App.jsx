@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import FeatureCard from "./components/FeatureCard.jsx";
-import TaskForm from "./components/TaskForm.jsx";
-import TaskFilters from "./components/TaskFilters.jsx";
-import TaskBoard from "./components/TaskBoard.jsx";
+import TasksSection from "./components/TasksSection.jsx";
 import {
   createTask,
   deleteTask,
@@ -524,48 +522,21 @@ function App() {
             onDeleteProject={handleDeleteProject}
           />
 
-          <div className="mt-10">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-slate-900">
-                Tareas del proyecto
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Selecciona un proyecto y gestiona sus tareas asociadas.
-              </p>
-            </div>
-
-            <TaskForm
-              formData={formData}
-              onInputChange={handleInputChange}
-              onSubmit={handleSubmit}
-              isEditing={editingTaskId !== null}
-              onCancelEdit={handleCancelEditTask}
-            />
-
-            <TaskFilters
-              selectedStatus={selectedStatus}
-              onStatusChange={setSelectedStatus}
-            />
-
-            {tasksLoading && (
-              <p className="mb-4 text-sm font-medium text-slate-600">
-                Cargando tareas desde la API...
-              </p>
-            )}
-
-            {tasksError && (
-              <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
-                {tasksError}
-              </p>
-            )}
-
-            <TaskBoard
-              tasks={filteredTasks}
-              onDeleteTask={handleDeleteTask}
-              onUpdateTaskStatus={handleUpdateTaskStatus}
-              onEditTask={handleStartEditTask}
-            />
-          </div>
+          <TasksSection
+            formData={formData}
+            onInputChange={handleInputChange}
+            onSubmit={handleSubmit}
+            isEditingTask={editingTaskId !== null}
+            onCancelEditTask={handleCancelEditTask}
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+            tasksLoading={tasksLoading}
+            tasksError={tasksError}
+            tasks={filteredTasks}
+            onDeleteTask={handleDeleteTask}
+            onUpdateTaskStatus={handleUpdateTaskStatus}
+            onEditTask={handleStartEditTask}
+          />
         </div>
       </section>
     </main>
