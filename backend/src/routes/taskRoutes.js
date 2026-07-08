@@ -1,8 +1,12 @@
 import express from "express";
 import prisma from "../lib/prisma.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 // Router nos permite agrupar rutas relacionadas en un archivo separado.
 const router = express.Router();
+
+// Todas las rutas de tareas requieren usuario autenticado.
+router.use(authMiddleware);
 
 const allowedStatuses = ["TODO", "IN_PROGRESS", "DONE"];
 const allowedPriorities = ["LOW", "MEDIUM", "HIGH"];
@@ -14,7 +18,9 @@ const allowedPriorities = ["LOW", "MEDIUM", "HIGH"];
 router.get("/", async (req, res) => {
     const { projectId } = req.query;
 
-    let where = {};
+    const where = {
+        userId: req.user.userId,
+    };
 
     if (projectId) {
         if (projectId === "unassigned") {
@@ -87,9 +93,10 @@ router.post("/", async (req, res) => {
 
     try {
         if (parsedProjectId) {
-            const project = await prisma.project.findUnique({
+            const project = await prisma.project.findFirst({
                 where: {
                     id: parsedProjectId,
+                    userId: req.user.userId,
                 },
             });
 
@@ -106,6 +113,7 @@ router.post("/", async (req, res) => {
                 status: status || "TODO",
                 priority: priority || "MEDIUM",
                 projectId: parsedProjectId,
+                userId: req.user.userId,
             },
         });
 
@@ -151,9 +159,10 @@ router.patch("/:id", async (req, res) => {
     }
 
     try {
-        const task = await prisma.task.findUnique({
+        const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
+                userId: req.user.userId,
             },
         });
 
@@ -197,9 +206,10 @@ router.delete("/:id", async (req, res) => {
     }
 
     try {
-        const task = await prisma.task.findUnique({
+        const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
+                userId: req.user.userId,
             },
         });
 

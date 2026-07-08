@@ -1,14 +1,21 @@
 import express from "express";
 import prisma from "../lib/prisma.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 // Router para agrupar todas las rutas relacionadas con proyectos.
 const router = express.Router();
+
+// Todas las rutas de proyectos requieren usuario autenticado.
+router.use(authMiddleware);
 
 // GET /api/projects
 // Devuelve todos los proyectos guardados en MySQL.
 router.get("/", async (req, res) => {
     try {
         const projects = await prisma.project.findMany({
+            where: {
+                userId: req.user.userId,
+            },
             orderBy: {
                 createdAt: "desc",
             },
@@ -42,6 +49,10 @@ router.post("/", async (req, res) => {
             data: {
                 name: name.trim(),
                 description: description?.trim() || null,
+                userId: req.user.userId,
+            },
+            include: {
+                tasks: true,
             },
         });
 
@@ -73,9 +84,10 @@ router.patch("/:id", async (req, res) => {
     }
 
     try {
-        const project = await prisma.project.findUnique({
+        const project = await prisma.project.findFirst({
             where: {
                 id: projectId,
+                userId: req.user.userId,
             },
         });
 
@@ -121,9 +133,10 @@ router.delete("/:id", async (req, res) => {
     }
 
     try {
-        const project = await prisma.project.findUnique({
+        const project = await prisma.project.findFirst({
             where: {
                 id: projectId,
+                userId: req.user.userId,
             },
         });
 
