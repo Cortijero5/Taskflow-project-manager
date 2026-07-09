@@ -6,6 +6,20 @@ El objetivo del proyecto es demostrar el uso de React en frontend, Express en ba
 
 ---
 
+## Capturas
+
+### Login
+
+![Pantalla de login](docs/images/login.png)
+
+### Dashboard principal
+
+![Dashboard principal de TaskFlow](docs/images/dashboard.png)
+
+### Modal de tarea
+
+![Modal de creación o edición de tarea](docs/images/task-modal.png)
+
 ## Tecnologías utilizadas
 
 ### Frontend
