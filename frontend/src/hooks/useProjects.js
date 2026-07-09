@@ -61,7 +61,7 @@ function useProjects(currentUser) {
         event.preventDefault();
 
         if (!projectFormData.name.trim()) {
-            return;
+            return false;
         }
 
         setProjectsError("");
@@ -91,8 +91,11 @@ function useProjects(currentUser) {
                 name: "",
                 description: "",
             });
+
+            return true;
         } catch (error) {
             setProjectsError(error.message);
+            return false;
         }
     }
 

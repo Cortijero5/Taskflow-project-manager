@@ -65,7 +65,7 @@ function useTasks(currentUser, selectedProjectId, setProjects) {
         event.preventDefault();
 
         if (!formData.title.trim()) {
-            return;
+            return false;
         }
 
         setTasksError("");
@@ -116,8 +116,11 @@ function useTasks(currentUser, selectedProjectId, setProjects) {
                 status: TASK_STATUSES.TODO,
                 priority: TASK_PRIORITIES.MEDIUM,
             });
+
+            return true;
         } catch (error) {
             setTasksError(error.message);
+            return false;
         }
     }
 
