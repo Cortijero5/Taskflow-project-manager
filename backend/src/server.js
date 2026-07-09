@@ -11,7 +11,7 @@ const app = express();
 
 // Puerto donde se ejecutará la API.
 // El frontend usa Vite en 5173 y el backend usará 3000.
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Permitimos que el frontend de Vite pueda hacer peticiones a esta API.
 app.use(
