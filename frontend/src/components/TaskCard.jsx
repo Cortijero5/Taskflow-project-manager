@@ -25,13 +25,15 @@ function TaskCard({
     <article
       draggable
       onDragStart={(event) => onDragStart(event, id)}
-      className="cursor-grab rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition active:cursor-grabbing"
+      className="min-w-0 max-w-full cursor-grab rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition active:cursor-grabbing"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h3 className="break-words font-semibold text-slate-900">{title}</h3>
+      <div className="flex min-w-0 items-start justify-between gap-4">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <h3 className="break-words [overflow-wrap:anywhere] font-semibold text-slate-900">
+            {title}
+          </h3>
 
-          <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-600">
+          <p className="mt-2 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm text-slate-600">
             {description || "Sin descripción."}
           </p>
         </div>

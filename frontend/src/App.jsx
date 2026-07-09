@@ -52,6 +52,10 @@ function App() {
     resetTasks,
   } = useTasks(currentUser, selectedProjectId, setProjects);
 
+  const selectedProject = projects.find(
+    (project) => project.id === selectedProjectId,
+  );
+
   function handleLogout() {
     logout();
     resetProjects();
@@ -106,6 +110,7 @@ function App() {
           />
 
           <TasksSection
+            selectedProject={selectedProject}
             formData={formData}
             onInputChange={handleInputChange}
             onSubmit={handleSubmit}

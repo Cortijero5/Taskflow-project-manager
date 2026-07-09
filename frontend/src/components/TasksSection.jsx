@@ -4,6 +4,7 @@ import TaskBoard from "./TaskBoard.jsx";
 import TaskForm from "./TaskForm.jsx";
 
 function TasksSection({
+  selectedProject,
   formData,
   onInputChange,
   onSubmit,
@@ -19,6 +20,14 @@ function TasksSection({
   const [showTaskForm, setShowTaskForm] = useState(false);
 
   const shouldShowTaskForm = showTaskForm || isEditingTask;
+
+  const sectionTitle = selectedProject
+    ? `Tareas de: ${selectedProject.name}`
+    : "Tareas sin proyecto";
+
+  const sectionDescription = selectedProject
+    ? "Gestiona las tareas asociadas al proyecto seleccionado."
+    : "Aquí aparecen las tareas que no están asociadas a ningún proyecto.";
 
   async function handleTaskFormSubmit(event) {
     const success = await onSubmit(event);
@@ -37,13 +46,11 @@ function TasksSection({
     <div className="mt-10">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">
-            Tareas del proyecto
+          <h2 className="break-words text-xl font-bold text-slate-900">
+            {sectionTitle}
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Selecciona un proyecto o quita la selección para gestionar tareas
-            sin proyecto.
-          </p>
+
+          <p className="mt-1 text-sm text-slate-600">{sectionDescription}</p>
         </div>
 
         <button
@@ -61,7 +68,9 @@ function TasksSection({
           description={
             isEditingTask
               ? "Modifica los datos de la tarea seleccionada."
-              : "Crea una nueva tarea para el tablero actual."
+              : selectedProject
+                ? `Crea una nueva tarea dentro de "${selectedProject.name}".`
+                : "Crea una nueva tarea sin asociarla a ningún proyecto."
           }
           onClose={handleCloseTaskModal}
         >

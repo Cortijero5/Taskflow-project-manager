@@ -43,7 +43,7 @@ function TaskBoard({ tasks, onDeleteTask, onUpdateTaskStatus, onEditTask }) {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-3">
       {statusOptions.map((column) => {
         const columnTasks = tasks.filter(
           (task) => task.status === column.value,
@@ -60,17 +60,19 @@ function TaskBoard({ tasks, onDeleteTask, onUpdateTaskStatus, onEditTask }) {
             key={column.value}
             onDragOver={handleDragOver}
             onDrop={(event) => handleDrop(event, column.value)}
-            className={`min-h-64 rounded-xl border p-4 transition ${columnStyle}`}
+            className={`min-h-64 min-w-0 rounded-xl border p-4 transition ${columnStyle}`}
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className={`font-semibold ${headerStyle}`}>{column.label}</h3>
+            <div className="mb-4 flex min-w-0 items-center justify-between gap-3">
+              <h3 className={`min-w-0 font-semibold ${headerStyle}`}>
+                {column.label}
+              </h3>
 
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+              <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">
                 {columnTasks.length}
               </span>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid min-w-0 gap-3">
               {columnTasks.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
                   Arrastra una tarea aquí.
