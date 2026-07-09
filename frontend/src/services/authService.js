@@ -1,45 +1,28 @@
-const API_BASE_URL = "http://localhost:3000/api";
+import { apiRequest } from "./apiClient.js";
 
-async function handleResponse(response) {
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Error en la petición.");
-    }
-
-    return data;
-}
-
+// Registra un nuevo usuario.
 export async function registerUser(userData) {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    return apiRequest("/auth/register", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
         body: JSON.stringify(userData),
     });
-
-    return handleResponse(response);
 }
 
+// Inicia sesión.
 export async function loginUser(credentials) {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    return apiRequest("/auth/login", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
         body: JSON.stringify(credentials),
     });
-
-    return handleResponse(response);
 }
 
-export async function getCurrentUser(token) {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-
-    return handleResponse(response);
+// Obtiene el usuario autenticado usando el token guardado en localStorage.
+export async function getCurrentUser() {
+    return apiRequest("/auth/me");
 }

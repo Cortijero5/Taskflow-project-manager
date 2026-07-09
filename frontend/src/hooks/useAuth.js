@@ -29,7 +29,7 @@ function useAuth() {
             }
 
             try {
-                const user = await getCurrentUser(token);
+                const user = await getCurrentUser();
                 setCurrentUser(user);
             } catch (error) {
                 localStorage.removeItem("taskflow_token");
