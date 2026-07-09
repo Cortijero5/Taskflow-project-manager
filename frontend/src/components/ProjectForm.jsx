@@ -26,6 +26,9 @@ function ProjectForm({
             value={formData.name}
             onChange={onInputChange}
             placeholder="Ej: TaskFlow Portfolio"
+            required
+            minLength={2}
+            autoComplete="off"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
           />
         </div>
@@ -45,6 +48,8 @@ function ProjectForm({
             value={formData.description}
             onChange={onInputChange}
             placeholder="Breve descripción del proyecto"
+            maxLength={200}
+            autoComplete="off"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
           />
         </div>

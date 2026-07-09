@@ -28,6 +28,10 @@ function TaskForm({
             value={formData.title}
             onChange={onInputChange}
             placeholder="Ej: Crear pantalla de registro"
+            required
+            minLength={2}
+            maxLength={100}
+            autoComplete="off"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
           />
         </div>
@@ -47,6 +51,8 @@ function TaskForm({
             value={formData.description}
             onChange={onInputChange}
             placeholder="Breve descripción de la tarea"
+            maxLength={200}
+            autoComplete="off"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
           />
         </div>
@@ -64,6 +70,7 @@ function TaskForm({
             name="status"
             value={formData.status}
             onChange={onInputChange}
+            required
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
           >
             {statusOptions.map((option) => (
@@ -87,6 +94,7 @@ function TaskForm({
             name="priority"
             value={formData.priority}
             onChange={onInputChange}
+            required
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
           >
             {priorityOptions.map((option) => (
