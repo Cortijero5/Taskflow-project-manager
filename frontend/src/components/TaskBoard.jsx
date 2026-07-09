@@ -1,19 +1,5 @@
+import { statusOptions } from "../constants/taskOptions.js";
 import TaskCard from "./TaskCard.jsx";
-
-const statusColumns = [
-  {
-    title: "Pendiente",
-    value: "TODO",
-  },
-  {
-    title: "En progreso",
-    value: "IN_PROGRESS",
-  },
-  {
-    title: "Hecho",
-    value: "DONE",
-  },
-];
 
 function TaskBoard({ tasks, onDeleteTask, onUpdateTaskStatus, onEditTask }) {
   if (tasks.length === 0) {
@@ -23,7 +9,7 @@ function TaskBoard({ tasks, onDeleteTask, onUpdateTaskStatus, onEditTask }) {
           No hay tareas para mostrar.
         </p>
         <p className="mt-1 text-sm text-slate-500">
-          Crea una tarea o cambia el filtro seleccionado.
+          Crea una tarea para empezar a organizar el tablero.
         </p>
       </div>
     );
@@ -31,7 +17,7 @@ function TaskBoard({ tasks, onDeleteTask, onUpdateTaskStatus, onEditTask }) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
-      {statusColumns.map((column) => {
+      {statusOptions.map((column) => {
         const columnTasks = tasks.filter(
           (task) => task.status === column.value,
         );
@@ -42,7 +28,7 @@ function TaskBoard({ tasks, onDeleteTask, onUpdateTaskStatus, onEditTask }) {
             className="rounded-xl border border-slate-200 bg-slate-50 p-4"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold text-slate-900">{column.title}</h3>
+              <h3 className="font-semibold text-slate-900">{column.label}</h3>
 
               <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">
                 {columnTasks.length}

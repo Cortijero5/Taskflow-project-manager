@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import {
+    TASK_PRIORITIES,
+    TASK_STATUSES,
+} from "../constants/taskOptions.js";
+import {
     createTask,
     deleteTask,
     getTasks,
@@ -8,7 +12,6 @@ import {
 } from "../services/taskService.js";
 
 function useTasks(currentUser, selectedProjectId, setProjects) {
-    const [selectedStatus, setSelectedStatus] = useState("ALL");
     const [tasks, setTasks] = useState([]);
     const [tasksLoading, setTasksLoading] = useState(false);
     const [tasksError, setTasksError] = useState("");
@@ -16,16 +19,11 @@ function useTasks(currentUser, selectedProjectId, setProjects) {
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        status: "TODO",
-        priority: "MEDIUM",
+        status: TASK_STATUSES.TODO,
+        priority: TASK_PRIORITIES.MEDIUM,
     });
 
     const [editingTaskId, setEditingTaskId] = useState(null);
-
-    const filteredTasks =
-        selectedStatus === "ALL"
-            ? tasks
-            : tasks.filter((task) => task.status === selectedStatus);
 
     // Carga tareas cuando hay usuario y cambia el proyecto seleccionado.
     // Si selectedProjectId es null, cargamos tareas sin proyecto.
@@ -115,11 +113,9 @@ function useTasks(currentUser, selectedProjectId, setProjects) {
             setFormData({
                 title: "",
                 description: "",
-                status: "TODO",
-                priority: "MEDIUM",
+                status: TASK_STATUSES.TODO,
+                priority: TASK_PRIORITIES.MEDIUM,
             });
-
-            setSelectedStatus("ALL");
         } catch (error) {
             setTasksError(error.message);
         }
@@ -142,8 +138,8 @@ function useTasks(currentUser, selectedProjectId, setProjects) {
         setFormData({
             title: "",
             description: "",
-            status: "TODO",
-            priority: "MEDIUM",
+            status: TASK_STATUSES.TODO,
+            priority: TASK_PRIORITIES.MEDIUM,
         });
     }
 
@@ -192,7 +188,6 @@ function useTasks(currentUser, selectedProjectId, setProjects) {
     }
 
     function resetTasks() {
-        setSelectedStatus("ALL");
         setTasks([]);
         setTasksError("");
         setTasksLoading(false);
@@ -200,18 +195,15 @@ function useTasks(currentUser, selectedProjectId, setProjects) {
         setFormData({
             title: "",
             description: "",
-            status: "TODO",
-            priority: "MEDIUM",
+            status: TASK_STATUSES.TODO,
+            priority: TASK_PRIORITIES.MEDIUM,
         });
 
         setEditingTaskId(null);
     }
 
     return {
-        selectedStatus,
-        setSelectedStatus,
         tasks,
-        filteredTasks,
         tasksLoading,
         tasksError,
         formData,

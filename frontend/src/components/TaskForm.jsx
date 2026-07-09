@@ -1,3 +1,5 @@
+import { priorityOptions, statusOptions } from "../constants/taskOptions.js";
+
 function TaskForm({
   formData,
   onInputChange,
@@ -64,9 +66,11 @@ function TaskForm({
             onChange={onInputChange}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
           >
-            <option value="TODO">Pendiente</option>
-            <option value="IN_PROGRESS">En progreso</option>
-            <option value="DONE">Hecho</option>
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -85,9 +89,11 @@ function TaskForm({
             onChange={onInputChange}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
           >
-            <option value="LOW">Baja</option>
-            <option value="MEDIUM">Media</option>
-            <option value="HIGH">Alta</option>
+            {priorityOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>

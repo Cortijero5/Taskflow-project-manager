@@ -1,29 +1,10 @@
 import AuthForm from "./components/AuthForm.jsx";
 import DashboardHeader from "./components/DashboardHeader.jsx";
-import FeatureCard from "./components/FeatureCard.jsx";
 import ProjectsSection from "./components/ProjectsSection.jsx";
 import TasksSection from "./components/TasksSection.jsx";
 import useAuth from "./hooks/useAuth.js";
 import useProjects from "./hooks/useProjects.js";
 import useTasks from "./hooks/useTasks.js";
-
-const features = [
-  {
-    id: 1,
-    title: "Proyectos",
-    description: "Crea y organiza tus espacios de trabajo.",
-  },
-  {
-    id: 2,
-    title: "Tareas",
-    description: "Gestiona tareas por estado, prioridad y fecha.",
-  },
-  {
-    id: 3,
-    title: "API REST",
-    description: "Frontend conectado a un backend con Express.",
-  },
-];
 
 function App() {
   const {
@@ -57,9 +38,7 @@ function App() {
   } = useProjects(currentUser);
 
   const {
-    selectedStatus,
-    setSelectedStatus,
-    filteredTasks,
+    tasks,
     tasksLoading,
     tasksError,
     formData,
@@ -111,16 +90,6 @@ function App() {
         <div className="rounded-2xl bg-white p-8 shadow-sm">
           <DashboardHeader currentUser={currentUser} onLogout={handleLogout} />
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {features.map((feature) => (
-              <FeatureCard
-                key={feature.id}
-                title={feature.title}
-                description={feature.description}
-              />
-            ))}
-          </div>
-
           <ProjectsSection
             projectFormData={projectFormData}
             onProjectInputChange={handleProjectInputChange}
@@ -142,11 +111,9 @@ function App() {
             onSubmit={handleSubmit}
             isEditingTask={editingTaskId !== null}
             onCancelEditTask={handleCancelEditTask}
-            selectedStatus={selectedStatus}
-            onStatusChange={setSelectedStatus}
             tasksLoading={tasksLoading}
             tasksError={tasksError}
-            tasks={filteredTasks}
+            tasks={tasks}
             onDeleteTask={handleDeleteTask}
             onUpdateTaskStatus={handleUpdateTaskStatus}
             onEditTask={handleStartEditTask}

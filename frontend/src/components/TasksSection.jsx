@@ -1,5 +1,4 @@
 import TaskBoard from "./TaskBoard.jsx";
-import TaskFilters from "./TaskFilters.jsx";
 import TaskForm from "./TaskForm.jsx";
 
 function TasksSection({
@@ -8,8 +7,6 @@ function TasksSection({
   onSubmit,
   isEditingTask,
   onCancelEditTask,
-  selectedStatus,
-  onStatusChange,
   tasksLoading,
   tasksError,
   tasks,
@@ -24,7 +21,8 @@ function TasksSection({
           Tareas del proyecto
         </h2>
         <p className="mt-1 text-sm text-slate-600">
-          Selecciona un proyecto y gestiona sus tareas asociadas.
+          Selecciona un proyecto o quita la selección para gestionar tareas sin
+          proyecto.
         </p>
       </div>
 
@@ -34,11 +32,6 @@ function TasksSection({
         onSubmit={onSubmit}
         isEditing={isEditingTask}
         onCancelEdit={onCancelEditTask}
-      />
-
-      <TaskFilters
-        selectedStatus={selectedStatus}
-        onStatusChange={onStatusChange}
       />
 
       {tasksLoading && (
