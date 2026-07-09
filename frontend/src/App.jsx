@@ -90,40 +90,40 @@ function App() {
 
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10">
-      <section className="mx-auto max-w-5xl">
-        <div className="rounded-2xl bg-white p-8 shadow-sm">
+      <section className="mx-auto max-w-6xl space-y-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <DashboardHeader currentUser={currentUser} onLogout={handleLogout} />
-
-          <ProjectsSection
-            projectFormData={projectFormData}
-            onProjectInputChange={handleProjectInputChange}
-            onProjectSubmit={handleProjectSubmit}
-            isEditingProject={editingProjectId !== null}
-            onCancelEditProject={handleCancelEditProject}
-            projectsLoading={projectsLoading}
-            projectsError={projectsError}
-            projects={projects}
-            selectedProjectId={selectedProjectId}
-            onSelectProject={setSelectedProjectId}
-            onEditProject={handleStartEditProject}
-            onDeleteProject={handleDeleteProject}
-          />
-
-          <TasksSection
-            selectedProject={selectedProject}
-            formData={formData}
-            onInputChange={handleInputChange}
-            onSubmit={handleSubmit}
-            isEditingTask={editingTaskId !== null}
-            onCancelEditTask={handleCancelEditTask}
-            tasksLoading={tasksLoading}
-            tasksError={tasksError}
-            tasks={tasks}
-            onDeleteTask={handleDeleteTask}
-            onUpdateTaskStatus={handleUpdateTaskStatus}
-            onEditTask={handleStartEditTask}
-          />
         </div>
+
+        <ProjectsSection
+          projectFormData={projectFormData}
+          onProjectInputChange={handleProjectInputChange}
+          onProjectSubmit={handleProjectSubmit}
+          isEditingProject={editingProjectId !== null}
+          onCancelEditProject={handleCancelEditProject}
+          projectsLoading={projectsLoading}
+          projectsError={projectsError}
+          projects={projects}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={setSelectedProjectId}
+          onEditProject={handleStartEditProject}
+          onDeleteProject={handleDeleteProject}
+        />
+
+        <TasksSection
+          selectedProject={selectedProject}
+          formData={formData}
+          onInputChange={handleInputChange}
+          onSubmit={handleSubmit}
+          isEditingTask={editingTaskId !== null}
+          onCancelEditTask={handleCancelEditTask}
+          tasksLoading={tasksLoading}
+          tasksError={tasksError}
+          tasks={tasks}
+          onDeleteTask={handleDeleteTask}
+          onUpdateTaskStatus={handleUpdateTaskStatus}
+          onEditTask={handleStartEditTask}
+        />
       </section>
     </main>
   );
