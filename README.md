@@ -53,7 +53,9 @@ El objetivo del proyecto es demostrar el uso de React en frontend, Express en ba
   - Pendiente
   - En progreso
   - Hecho
-- Cambio rápido de estado de tareas.
+- Cambio de estado mediante drag and drop entre columnas.
+- Formularios de creación y edición en modales.
+- Colores visuales por estado y prioridad.
 - Validaciones básicas en frontend y backend.
 - Variables de entorno separadas con `.env`.
 - Base de datos MySQL levantada con Docker.
@@ -397,12 +399,14 @@ El proyecto cuenta con una versión funcional que permite:
 - Crear tareas sin proyecto.
 - Editar tareas.
 - Eliminar tareas.
-- Cambiar el estado de las tareas.
+- Cambiar el estado de las tareas arrastrándolas entre columnas.
 - Visualizar tareas en formato tablero.
+- Crear y editar proyectos/tareas mediante modales.
+- Mostrar colores por estado y prioridad.
 - Separar los datos por usuario autenticado.
 
 ---
 
 ## Autor
 
-Proyecto desarrollado por Fran Ortega
+Proyecto desarrollado por Fran Ortega.
