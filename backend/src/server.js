@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -10,19 +11,29 @@ import authRoutes from "./routes/authRoutes.js";
 const app = express();
 
 // Puerto donde se ejecutará la API.
-// El frontend usa Vite en 5173 y el backend usará 3000.
+// Si existe PORT en .env, usamos ese. Si no, usamos 3000.
 const PORT = process.env.PORT || 3000;
 
+// Comprobamos que existe JWT_SECRET.
+// Si no existe, el backend se detiene para evitar generar/verificar tokens mal configurados.
+if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET no está definido en el archivo .env");
+}
+
+// Helmet añade cabeceras HTTP de seguridad básicas.
+app.use(helmet());
+
 // Permitimos que el frontend de Vite pueda hacer peticiones a esta API.
+// En desarrollo, Vite normalmente corre en http://localhost:5173.
 app.use(
     cors({
         origin: "http://localhost:5173",
-    })
+    }),
 );
 
 // Middleware para que Express pueda leer JSON en las peticiones.
-// Esto será necesario cuando React envíe datos al backend.
-app.use(express.json());
+// Limitamos el tamaño para evitar recibir cuerpos enormes innecesarios.
+app.use(express.json({ limit: "1mb" }));
 
 // Ruta de prueba para comprobar que el backend está funcionando.
 // GET http://localhost:3000/api/health
@@ -33,14 +44,19 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-// Conectamos todas las rutas relacionadas con tareas.
-// Cualquier ruta que empiece por /api/tasks se gestionará en taskRoutes.
-app.use("/api/tasks", taskRoutes);
+// Rutas de autenticación.
+// /api/auth/register
+// /api/auth/login
+// /api/auth/me
+app.use("/api/auth", authRoutes);
 
-// Conectamos todas las rutas relacionadas con proyectos.
+// Rutas de proyectos.
+// Cualquier ruta que empiece por /api/projects se gestionará en projectRoutes.
 app.use("/api/projects", projectRoutes);
 
-app.use("/api/auth", authRoutes);
+// Rutas de tareas.
+// Cualquier ruta que empiece por /api/tasks se gestionará en taskRoutes.
+app.use("/api/tasks", taskRoutes);
 
 // Arrancamos el servidor y lo dejamos escuchando peticiones.
 app.listen(PORT, () => {
