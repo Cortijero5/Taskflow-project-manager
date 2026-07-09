@@ -1,4 +1,4 @@
-import { statusOptions } from "../constants/taskOptions.js";
+import { statusOptions, statusStyles } from "../constants/taskOptions.js";
 import TaskCard from "./TaskCard.jsx";
 
 function TaskBoard({ tasks, onDeleteTask, onUpdateTaskStatus, onEditTask }) {
@@ -22,13 +22,19 @@ function TaskBoard({ tasks, onDeleteTask, onUpdateTaskStatus, onEditTask }) {
           (task) => task.status === column.value,
         );
 
+        const columnStyle =
+          statusStyles[column.value]?.column || "border-slate-200 bg-slate-50";
+
+        const headerStyle =
+          statusStyles[column.value]?.header || "text-slate-900";
+
         return (
           <section
             key={column.value}
-            className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+            className={`rounded-xl border p-4 ${columnStyle}`}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold text-slate-900">{column.label}</h3>
+              <h3 className={`font-semibold ${headerStyle}`}>{column.label}</h3>
 
               <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">
                 {columnTasks.length}

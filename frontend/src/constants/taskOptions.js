@@ -39,3 +39,27 @@ export const priorityOptions = [
     },
     { label: priorityLabels[TASK_PRIORITIES.HIGH], value: TASK_PRIORITIES.HIGH },
 ];
+
+export const statusStyles = {
+    [TASK_STATUSES.TODO]: {
+        column: "border-yellow-200 bg-yellow-50",
+        header: "text-yellow-800",
+        badge: "bg-yellow-100 text-yellow-800",
+    },
+    [TASK_STATUSES.IN_PROGRESS]: {
+        column: "border-blue-200 bg-blue-50",
+        header: "text-blue-800",
+        badge: "bg-blue-100 text-blue-800",
+    },
+    [TASK_STATUSES.DONE]: {
+        column: "border-green-200 bg-green-50",
+        header: "text-green-800",
+        badge: "bg-green-100 text-green-800",
+    },
+};
+
+export const priorityStyles = {
+    [TASK_PRIORITIES.LOW]: "bg-green-50 text-green-700",
+    [TASK_PRIORITIES.MEDIUM]: "bg-yellow-50 text-yellow-700",
+    [TASK_PRIORITIES.HIGH]: "bg-red-50 text-red-700",
+};
