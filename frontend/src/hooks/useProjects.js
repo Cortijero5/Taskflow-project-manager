@@ -118,14 +118,6 @@ function useProjects(currentUser) {
     }
 
     async function handleDeleteProject(projectId) {
-        const confirmDelete = window.confirm(
-            "¿Seguro que quieres eliminar este proyecto? Sus tareas quedarán sin proyecto.",
-        );
-
-        if (!confirmDelete) {
-            return;
-        }
-
         setProjectsError("");
 
         try {
