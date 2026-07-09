@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
+import AuthForm from "./components/AuthForm.jsx";
+import DashboardHeader from "./components/DashboardHeader.jsx";
 import FeatureCard from "./components/FeatureCard.jsx";
+import ProjectsSection from "./components/ProjectsSection.jsx";
 import TasksSection from "./components/TasksSection.jsx";
+import useAuth from "./hooks/useAuth.js";
+import useProjects from "./hooks/useProjects.js";
 import {
   createTask,
   deleteTask,
@@ -8,20 +13,6 @@ import {
   updateTask,
   updateTaskStatus,
 } from "./services/taskService.js";
-import ProjectsSection from "./components/ProjectsSection.jsx";
-import {
-  createProject,
-  deleteProject,
-  getProjects,
-  updateProject,
-} from "./services/projectService.js";
-import AuthForm from "./components/AuthForm.jsx";
-import {
-  getCurrentUser,
-  loginUser,
-  registerUser,
-} from "./services/authService.js";
-import DashboardHeader from "./components/DashboardHeader.jsx";
 
 const features = [
   {
@@ -42,29 +33,35 @@ const features = [
 ];
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authSubmitting, setAuthSubmitting] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [authMode, setAuthMode] = useState("login");
+  const {
+    currentUser,
+    authLoading,
+    authSubmitting,
+    authError,
+    authMode,
+    authFormData,
+    handleAuthInputChange,
+    handleAuthSubmit,
+    handleAuthModeChange,
+    logout,
+  } = useAuth();
 
-  const [authFormData, setAuthFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-
-  const [projects, setProjects] = useState([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("unassigned");
-  const [projectsLoading, setProjectsLoading] = useState(false);
-  const [projectsError, setProjectsError] = useState("");
-
-  const [projectFormData, setProjectFormData] = useState({
-    name: "",
-    description: "",
-  });
-
-  const [editingProjectId, setEditingProjectId] = useState(null);
+  const {
+    projects,
+    setProjects,
+    selectedProjectId,
+    setSelectedProjectId,
+    projectsLoading,
+    projectsError,
+    projectFormData,
+    editingProjectId,
+    handleProjectInputChange,
+    handleProjectSubmit,
+    handleStartEditProject,
+    handleCancelEditProject,
+    handleDeleteProject,
+    resetProjects,
+  } = useProjects(currentUser);
 
   const [selectedStatus, setSelectedStatus] = useState("ALL");
   const [tasks, setTasks] = useState([]);
@@ -85,60 +82,8 @@ function App() {
       ? tasks
       : tasks.filter((task) => task.status === selectedStatus);
 
-  // Comprueba si hay sesión guardada al cargar la app.
-  useEffect(() => {
-    async function loadCurrentUser() {
-      const token = localStorage.getItem("taskflow_token");
-
-      if (!token) {
-        setAuthLoading(false);
-        return;
-      }
-
-      try {
-        const user = await getCurrentUser(token);
-        setCurrentUser(user);
-      } catch (error) {
-        localStorage.removeItem("taskflow_token");
-        setCurrentUser(null);
-      } finally {
-        setAuthLoading(false);
-      }
-    }
-
-    loadCurrentUser();
-  }, []);
-
-  // Carga proyectos solo cuando ya hay usuario autenticado.
-  useEffect(() => {
-    async function loadProjects() {
-      if (!currentUser) {
-        return;
-      }
-
-      setProjectsLoading(true);
-      setProjectsError("");
-
-      try {
-        const data = await getProjects();
-        setProjects(data);
-
-        if (data.length > 0) {
-          setSelectedProjectId(data[0].id);
-        } else {
-          setSelectedProjectId("unassigned");
-        }
-      } catch (error) {
-        setProjectsError(error.message);
-      } finally {
-        setProjectsLoading(false);
-      }
-    }
-
-    loadProjects();
-  }, [currentUser]);
-
-  // Carga tareas cuando hay usuario y cambia la vista/proyecto seleccionado.
+  // Carga tareas cuando hay usuario y cambia el proyecto seleccionado.
+  // Si selectedProjectId es null, cargamos tareas sin proyecto.
   useEffect(() => {
     async function loadTasks() {
       if (!currentUser) {
@@ -149,7 +94,10 @@ function App() {
       setTasksError("");
 
       try {
-        const data = await getTasks(selectedProjectId);
+        const projectFilter =
+          selectedProjectId === null ? "unassigned" : selectedProjectId;
+
+        const data = await getTasks(projectFilter);
         setTasks(data);
       } catch (error) {
         setTasksError(error.message);
@@ -161,66 +109,12 @@ function App() {
     loadTasks();
   }, [currentUser, selectedProjectId]);
 
-  function handleAuthInputChange(event) {
-    const { name, value } = event.target;
-
-    setAuthFormData({
-      ...authFormData,
-      [name]: value,
-    });
-  }
-
-  async function handleAuthSubmit(event) {
-    event.preventDefault();
-
-    setAuthError("");
-    setAuthSubmitting(true);
-
-    try {
-      if (authMode === "register") {
-        await registerUser(authFormData);
-      }
-
-      const data = await loginUser({
-        email: authFormData.email,
-        password: authFormData.password,
-      });
-
-      localStorage.setItem("taskflow_token", data.token);
-      setCurrentUser(data.user);
-
-      setAuthFormData({
-        name: "",
-        email: "",
-        password: "",
-      });
-    } catch (error) {
-      setAuthError(error.message);
-    } finally {
-      setAuthSubmitting(false);
-    }
-  }
-
-  function handleAuthModeChange() {
-    setAuthError("");
-    setAuthMode((currentMode) =>
-      currentMode === "login" ? "register" : "login",
-    );
-  }
-
   function handleLogout() {
-    localStorage.removeItem("taskflow_token");
+    logout();
+    resetProjects();
 
-    setCurrentUser(null);
-    setProjects([]);
     setTasks([]);
-    setSelectedProjectId("unassigned");
     setSelectedStatus("ALL");
-
-    setProjectFormData({
-      name: "",
-      description: "",
-    });
 
     setFormData({
       title: "",
@@ -229,9 +123,7 @@ function App() {
       priority: "MEDIUM",
     });
 
-    setEditingProjectId(null);
     setEditingTaskId(null);
-    setProjectsError("");
     setTasksError("");
   }
 
@@ -242,98 +134,6 @@ function App() {
       ...formData,
       [name]: value,
     });
-  }
-
-  function handleProjectInputChange(event) {
-    const { name, value } = event.target;
-
-    setProjectFormData({
-      ...projectFormData,
-      [name]: value,
-    });
-  }
-
-  async function handleProjectSubmit(event) {
-    event.preventDefault();
-
-    if (!projectFormData.name.trim()) {
-      return;
-    }
-
-    setProjectsError("");
-
-    try {
-      if (editingProjectId) {
-        const updatedProject = await updateProject(
-          editingProjectId,
-          projectFormData,
-        );
-
-        setProjects((currentProjects) =>
-          currentProjects.map((project) =>
-            project.id === editingProjectId ? updatedProject : project,
-          ),
-        );
-
-        setEditingProjectId(null);
-      } else {
-        const newProject = await createProject(projectFormData);
-
-        setProjects((currentProjects) => [newProject, ...currentProjects]);
-        setSelectedProjectId(newProject.id);
-      }
-
-      setProjectFormData({
-        name: "",
-        description: "",
-      });
-    } catch (error) {
-      setProjectsError(error.message);
-    }
-  }
-
-  function handleStartEditProject(project) {
-    setEditingProjectId(project.id);
-
-    setProjectFormData({
-      name: project.name,
-      description: project.description || "",
-    });
-  }
-
-  function handleCancelEditProject() {
-    setEditingProjectId(null);
-
-    setProjectFormData({
-      name: "",
-      description: "",
-    });
-  }
-
-  async function handleDeleteProject(projectId) {
-    const confirmDelete = window.confirm(
-      "¿Seguro que quieres eliminar este proyecto? Sus tareas quedarán sin proyecto.",
-    );
-
-    if (!confirmDelete) {
-      return;
-    }
-
-    setProjectsError("");
-
-    try {
-      await deleteProject(projectId);
-
-      setProjects((currentProjects) =>
-        currentProjects.filter((project) => project.id !== projectId),
-      );
-
-      if (selectedProjectId === projectId) {
-        setSelectedProjectId("unassigned");
-      }
-    } catch (error) {
-      setProjectsError(error.message);
-    }
   }
 
   async function handleSubmit(event) {
@@ -366,8 +166,7 @@ function App() {
       } else {
         const data = await createTask({
           ...formData,
-          projectId:
-            selectedProjectId === "unassigned" ? null : selectedProjectId,
+          projectId: selectedProjectId,
         });
 
         setTasks((currentTasks) => [data, ...currentTasks]);
