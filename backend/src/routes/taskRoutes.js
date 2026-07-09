@@ -11,13 +11,67 @@ import {
 // Router nos permite agrupar rutas relacionadas en un archivo separado.
 const router = express.Router();
 
+const MIN_TASK_TITLE_LENGTH = 2;
+const MAX_TASK_TITLE_LENGTH = 100;
+const MAX_TASK_DESCRIPTION_LENGTH = 200;
+
 // Todas las rutas de tareas requieren usuario autenticado.
 router.use(authMiddleware);
+
+function validateTaskData({ title, description, status, priority }, { partial = false } = {}) {
+    const trimmedTitle = title?.trim();
+    const trimmedDescription = description?.trim();
+
+    if (!partial && !trimmedTitle) {
+        return "El título de la tarea es obligatorio.";
+    }
+
+    if (title !== undefined && !trimmedTitle) {
+        return "El título de la tarea no puede estar vacío.";
+    }
+
+    if (trimmedTitle && trimmedTitle.length < MIN_TASK_TITLE_LENGTH) {
+        return `El título de la tarea debe tener al menos ${MIN_TASK_TITLE_LENGTH} caracteres.`;
+    }
+
+    if (trimmedTitle && trimmedTitle.length > MAX_TASK_TITLE_LENGTH) {
+        return `El título de la tarea no puede superar los ${MAX_TASK_TITLE_LENGTH} caracteres.`;
+    }
+
+    if (trimmedDescription && trimmedDescription.length > MAX_TASK_DESCRIPTION_LENGTH) {
+        return `La descripción no puede superar los ${MAX_TASK_DESCRIPTION_LENGTH} caracteres.`;
+    }
+
+    if (status !== undefined && !allowedStatuses.includes(status)) {
+        return "Estado de tarea no válido.";
+    }
+
+    if (priority !== undefined && !allowedPriorities.includes(priority)) {
+        return "Prioridad de tarea no válida.";
+    }
+
+    return null;
+}
+
+function parseProjectId(projectId) {
+    if (projectId === undefined || projectId === null || projectId === "") {
+        return null;
+    }
+
+    const parsedProjectId = Number(projectId);
+
+    if (Number.isNaN(parsedProjectId) || parsedProjectId <= 0) {
+        return "invalid";
+    }
+
+    return parsedProjectId;
+}
 
 // Ruta para obtener tareas desde MySQL.
 // Si llega projectId por query param, devuelve solo tareas de ese proyecto.
 // GET /api/tasks
 // GET /api/tasks?projectId=1
+// GET /api/tasks?projectId=unassigned
 router.get("/", async (req, res) => {
     const { projectId } = req.query;
 
@@ -31,7 +85,7 @@ router.get("/", async (req, res) => {
         } else {
             const parsedProjectId = Number(projectId);
 
-            if (Number.isNaN(parsedProjectId)) {
+            if (Number.isNaN(parsedProjectId) || parsedProjectId <= 0) {
                 return res.status(400).json({
                     message: "ID de proyecto no válido.",
                 });
@@ -40,6 +94,7 @@ router.get("/", async (req, res) => {
             where.projectId = parsedProjectId;
         }
     }
+
     try {
         const tasks = await prisma.task.findMany({
             where,
@@ -61,37 +116,25 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
     const { title, description, status, priority, projectId } = req.body;
 
-    // Validación básica: no permitimos tareas sin título.
-    if (!title || !title.trim()) {
+    const validationError = validateTaskData({
+        title,
+        description,
+        status,
+        priority,
+    });
+
+    if (validationError) {
         return res.status(400).json({
-            message: "El título de la tarea es obligatorio.",
+            message: validationError,
         });
     }
 
-    // Validamos que el estado enviado sea correcto.
-    if (status && !allowedStatuses.includes(status)) {
+    const parsedProjectId = parseProjectId(projectId);
+
+    if (parsedProjectId === "invalid") {
         return res.status(400).json({
-            message: "Estado de tarea no válido.",
+            message: "ID de proyecto no válido.",
         });
-    }
-
-    // Validamos que la prioridad enviada sea correcta.
-    if (priority && !allowedPriorities.includes(priority)) {
-        return res.status(400).json({
-            message: "Prioridad de tarea no válida.",
-        });
-    }
-
-    let parsedProjectId = null;
-
-    if (projectId) {
-        parsedProjectId = Number(projectId);
-
-        if (Number.isNaN(parsedProjectId)) {
-            return res.status(400).json({
-                message: "ID de proyecto no válido.",
-            });
-        }
     }
 
     try {
@@ -109,6 +152,7 @@ router.post("/", async (req, res) => {
                 });
             }
         }
+
         const newTask = await prisma.task.create({
             data: {
                 title: title.trim(),
@@ -134,30 +178,27 @@ router.patch("/:id", async (req, res) => {
     const taskId = Number(req.params.id);
     const { title, description, status, priority } = req.body;
 
-    if (Number.isNaN(taskId)) {
+    if (Number.isNaN(taskId) || taskId <= 0) {
         return res.status(400).json({
             message: "ID de tarea no válido.",
         });
     }
 
-    // Si se manda title, no permitimos que venga vacío.
-    if (title !== undefined && !title.trim()) {
-        return res.status(400).json({
-            message: "El título de la tarea no puede estar vacío.",
-        });
-    }
+    const validationError = validateTaskData(
+        {
+            title,
+            description,
+            status,
+            priority,
+        },
+        {
+            partial: true,
+        },
+    );
 
-    // Si se manda status, validamos que sea correcto.
-    if (status !== undefined && !allowedStatuses.includes(status)) {
+    if (validationError) {
         return res.status(400).json({
-            message: "Estado de tarea no válido.",
-        });
-    }
-
-    // Si se manda priority, validamos que sea correcta.
-    if (priority !== undefined && !allowedPriorities.includes(priority)) {
-        return res.status(400).json({
-            message: "Prioridad de tarea no válida.",
+            message: validationError,
         });
     }
 
@@ -202,7 +243,7 @@ router.patch("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
     const taskId = Number(req.params.id);
 
-    if (Number.isNaN(taskId)) {
+    if (Number.isNaN(taskId) || taskId <= 0) {
         return res.status(400).json({
             message: "ID de tarea no válido.",
         });
@@ -245,13 +286,12 @@ router.patch("/:id/status", async (req, res) => {
     const taskId = Number(req.params.id);
     const { status } = req.body;
 
-    if (Number.isNaN(taskId)) {
+    if (Number.isNaN(taskId) || taskId <= 0) {
         return res.status(400).json({
             message: "ID de tarea no válido.",
         });
     }
 
-    // Validamos que el estado enviado sea uno de los permitidos.
     if (!allowedStatuses.includes(status)) {
         return res.status(400).json({
             message: "Estado de tarea no válido.",
@@ -259,9 +299,10 @@ router.patch("/:id/status", async (req, res) => {
     }
 
     try {
-        const task = await prisma.task.findUnique({
+        const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
+                userId: req.user.userId,
             },
         });
 

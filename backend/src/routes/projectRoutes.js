@@ -5,11 +5,51 @@ import authMiddleware from "../middleware/authMiddleware.js";
 // Router para agrupar todas las rutas relacionadas con proyectos.
 const router = express.Router();
 
+const MIN_PROJECT_NAME_LENGTH = 2;
+const MAX_PROJECT_NAME_LENGTH = 100;
+const MAX_PROJECT_DESCRIPTION_LENGTH = 200;
+
 // Todas las rutas de proyectos requieren usuario autenticado.
 router.use(authMiddleware);
 
+function validateProjectData({ name, description }, { partial = false } = {}) {
+    const trimmedName = name?.trim();
+    const trimmedDescription = description?.trim();
+
+    if (!partial && !trimmedName) {
+        return "El nombre del proyecto es obligatorio.";
+    }
+
+    if (name !== undefined && !trimmedName) {
+        return "El nombre del proyecto no puede estar vacío.";
+    }
+
+    if (
+        trimmedName &&
+        trimmedName.length < MIN_PROJECT_NAME_LENGTH
+    ) {
+        return `El nombre del proyecto debe tener al menos ${MIN_PROJECT_NAME_LENGTH} caracteres.`;
+    }
+
+    if (
+        trimmedName &&
+        trimmedName.length > MAX_PROJECT_NAME_LENGTH
+    ) {
+        return `El nombre del proyecto no puede superar los ${MAX_PROJECT_NAME_LENGTH} caracteres.`;
+    }
+
+    if (
+        trimmedDescription &&
+        trimmedDescription.length > MAX_PROJECT_DESCRIPTION_LENGTH
+    ) {
+        return `La descripción no puede superar los ${MAX_PROJECT_DESCRIPTION_LENGTH} caracteres.`;
+    }
+
+    return null;
+}
+
 // GET /api/projects
-// Devuelve todos los proyectos guardados en MySQL.
+// Devuelve todos los proyectos del usuario autenticado.
 router.get("/", async (req, res) => {
     try {
         const projects = await prisma.project.findMany({
@@ -33,14 +73,18 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/projects
-// Crea un nuevo proyecto en MySQL.
+// Crea un nuevo proyecto asociado al usuario autenticado.
 router.post("/", async (req, res) => {
     const { name, description } = req.body;
 
-    // Validación básica: no permitimos proyectos sin nombre.
-    if (!name || !name.trim()) {
+    const validationError = validateProjectData({
+        name,
+        description,
+    });
+
+    if (validationError) {
         return res.status(400).json({
-            message: "El nombre del proyecto es obligatorio.",
+            message: validationError,
         });
     }
 
@@ -65,7 +109,7 @@ router.post("/", async (req, res) => {
 });
 
 // PATCH /api/projects/:id
-// Actualiza el nombre y/o descripción de un proyecto.
+// Actualiza el nombre y/o descripción de un proyecto del usuario autenticado.
 router.patch("/:id", async (req, res) => {
     const projectId = Number(req.params.id);
     const { name, description } = req.body;
@@ -76,10 +120,19 @@ router.patch("/:id", async (req, res) => {
         });
     }
 
-    // Si se manda name, no permitimos que venga vacío.
-    if (name !== undefined && !name.trim()) {
+    const validationError = validateProjectData(
+        {
+            name,
+            description,
+        },
+        {
+            partial: true,
+        },
+    );
+
+    if (validationError) {
         return res.status(400).json({
-            message: "El nombre del proyecto no puede estar vacío.",
+            message: validationError,
         });
     }
 

@@ -6,24 +6,52 @@ import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+const MIN_PASSWORD_LENGTH = 6;
+const MAX_NAME_LENGTH = 50;
+
+// Validación básica de formato email.
+// No es perfecta, pero evita valores claramente incorrectos.
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 // POST /api/auth/register
 // Registra un nuevo usuario.
 router.post("/register", async (req, res) => {
     const { name, email, password } = req.body;
 
-    if (!email || !email.trim()) {
+    const trimmedName = name?.trim() || null;
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedEmail) {
         return res.status(400).json({
             message: "El email es obligatorio.",
         });
     }
 
-    if (!password || password.length < 6) {
+    if (!isValidEmail(normalizedEmail)) {
         return res.status(400).json({
-            message: "La contraseña debe tener al menos 6 caracteres.",
+            message: "El formato del email no es válido.",
         });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    if (!password) {
+        return res.status(400).json({
+            message: "La contraseña es obligatoria.",
+        });
+    }
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+        return res.status(400).json({
+            message: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`,
+        });
+    }
+
+    if (trimmedName && trimmedName.length > MAX_NAME_LENGTH) {
+        return res.status(400).json({
+            message: `El nombre no puede superar los ${MAX_NAME_LENGTH} caracteres.`,
+        });
+    }
 
     try {
         const existingUser = await prisma.user.findUnique({
@@ -39,11 +67,12 @@ router.post("/register", async (req, res) => {
         }
 
         // Ciframos la contraseña antes de guardarla.
+        // Nunca guardamos la contraseña original en MySQL.
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await prisma.user.create({
             data: {
-                name: name?.trim() || null,
+                name: trimmedName,
                 email: normalizedEmail,
                 password: hashedPassword,
             },
@@ -67,9 +96,17 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
-    if (!email || !email.trim()) {
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedEmail) {
         return res.status(400).json({
             message: "El email es obligatorio.",
+        });
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+        return res.status(400).json({
+            message: "El formato del email no es válido.",
         });
     }
 
@@ -78,8 +115,6 @@ router.post("/login", async (req, res) => {
             message: "La contraseña es obligatoria.",
         });
     }
-
-    const normalizedEmail = email.trim().toLowerCase();
 
     try {
         const user = await prisma.user.findUnique({
